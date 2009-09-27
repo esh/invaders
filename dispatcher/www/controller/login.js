@@ -7,7 +7,7 @@ dispatcher.register("login", function() {
 					pass: $("#password").val()
 				}, function(data, status) {
 					if(status == "success") {
-						session["uid"] = data.uid
+						session.uid = data.uid
 						dispatcher.run("market")
 					} else alert("bad username/password")
 				})
