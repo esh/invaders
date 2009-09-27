@@ -64,12 +64,6 @@ def login_handler(msg):
 	# assign uid
 
 	if not (msg["user"] in client_queues):	
-		# create server side queue for client
-		t = "client/" + msg["user"]
-		chan.queue_declare(queue=t, durable=False,exclusive=False, auto_delete=True)
-		chan.queue_bind(queue="exchange", exchange="ex", routing_key=t)
-
-		# create client side queue for client
 		client_queues[msg["user"]] = ClientMessageDispatcher(msg["user"], msg["user"], hd)
 
 	# inform the exchange we got a new client
