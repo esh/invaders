@@ -27,27 +27,34 @@ class ServerMessageDispatcher(object):
 		req.write(json.dumps(self.__mapping[msg["type"]](msg)))		
 
 class ClientMessageDispatcher(object):
-	def __init__(self, uid, httpdispatcher):
-		self.listener = coros.event()
-		path = "/client/" + uid
-
+	def __init__(self, user, uid, httpdispatcher):
 		# listen on http side
-		httpdispatcher.register_listener("/comet" + path, self.http_listen)
+		httpdispatcher.register_listener("/comet/client/" + uid, self.listen)
 	
-		# listen on client side	
-		chan.queue_declare(queue=path, durable=False,exclusive=False, auto_delete=True)
-        	chan.queue_bind(queue=path, exchange="ex", routing_key=path)
-		chan.basic_consume(queue=path, callback=self.mq_listen, consumer_tag=path)
+		# listen on client side
+		self.__queue = "/client/" + user
+		chan.queue_declare(queue=self.__queue, durable=False,exclusive=False, auto_delete=True)
+        	chan.queue_bind(queue=self.__queue, exchange="ex", routing_key=self.__queue)
 
-		print("listening on " + path)
+		print("registered " + user)
 
-	def mq_listen(msg):
-		self.listener.send(msg)
-		self.listener.reset()
-
-	def http_listen(req):
-		req.write(listener.wait())
-
+	def listen(self, req):
+		msgs = []
+		while True:
+			msg = chan.basic_get(queue=self.__queue)
+			if msg is None:
+				api.sleep()
+			else:
+				while True:
+					msgs.append(msg.body)
+					msg = chan.basic_get(queue=self.__queue)
+					if msg is None:
+						req.write("[" + ",".join(msgs) + "]")
+						return
+					else:
+						msgs.append(msg.body)
+						chan.basic_ack(msg.delivery_tag)
+	
 client_queues = {}
 
 def login_handler(msg):
@@ -63,7 +70,7 @@ def login_handler(msg):
 		chan.queue_bind(queue="exchange", exchange="ex", routing_key=t)
 
 		# create client side queue for client
-		client_queues[msg["user"]] = ClientMessageDispatcher(msg["user"], hd)
+		client_queues[msg["user"]] = ClientMessageDispatcher(msg["user"], msg["user"], hd)
 
 	# inform the exchange we got a new client
 	mqmsg = amqp.Message(json.dumps({ "type": "subscribe", "user": msg["user"]}))

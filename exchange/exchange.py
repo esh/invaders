@@ -24,7 +24,7 @@ class PriceGenerator(Thread):
 			msg = amqp.Message(text)
 			chan.basic_publish(msg, exchange="ex", routing_key=self.__queue)
 			print "published " + text
-			self.__event.wait(1)	
+			self.__event.wait(10)	
 
 def recv(msg):
 	print msg.body
