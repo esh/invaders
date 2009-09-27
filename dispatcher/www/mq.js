@@ -1,6 +1,4 @@
 var mq = (function() {
-	var subscriptions = new Object()
-
 	return {
 		send: function(msg, fn) {
 			$.post("/comet/meta", $.toJSON(msg), fn, "json") 
@@ -8,16 +6,17 @@ var mq = (function() {
 		subscribe: function(types, fn) {
 			function sub() {
 				// send a msg on meta describing the subscriptions
-
-				$.getJSON("/comet/client/" + session.uid, null, 
-					function(data) {
+				$.ajax({
+					type: "GET",
+					url: "/comet/client/" + session.uid,
+					dataType: "json",
+					success: function(data) {
 						fn(data)
-					sub()	
-				})
-			/*	
-				$.ajaxError(function(event, req, options, error) {
-					sub()
-				})*/
+						sub()
+					},
+					error: function(XMLHttpRequest, status, error) {
+						sub()
+					}})
 			}
 
 			sub()
