@@ -4,9 +4,6 @@ import simplejson as json
  
 util.wrap_socket_with_coroutine_socket()
 
-conn = amqp.Connection(host="localhost:5672 ", userid="guest", password="guest", virtual_host="/", insist=False)
-chan = conn.channel()
-
 class HTTPDispatcher(object):
 	def __init__(self, mapping = {}):
 		self.__mapping = mapping
@@ -17,44 +14,41 @@ class HTTPDispatcher(object):
 	def handle_request(self, req):
 		self.__mapping[req.path()](req)
 
-
 class ServerMessageDispatcher(object):
 	def __init__(self, mapping = {}):
 		self.__mapping = mapping
 
 	def dispatch(self, req):
 		msg = json.loads(req.read_body())
-		req.write(json.dumps(self.__mapping[msg["type"]](msg)))		
+		req.write(self.__mapping[msg["type"]](msg))		
 
-class ClientMessageDispatcher(object):
+class ClientMessageQueue(object):
 	def __init__(self, user, uid, httpdispatcher):
-		# listen on http side
-		httpdispatcher.register_listener("/comet/client/" + uid, self.listen)
+		self.__queue = "client." + user
+		conn = amqp.Connection(host="localhost:5672 ", userid="guest", password="guest", virtual_host="/", insist=False)
+		self.__chan = conn.channel()
+		self.__chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
+		self.__chan.queue_declare(queue=self.__queue, durable=False,exclusive=False, auto_delete=True)
+        	self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key= "depth")
 	
-		# listen on client side
-		self.__queue = "/client/" + user
-		chan.queue_declare(queue=self.__queue, durable=False,exclusive=False, auto_delete=True)
-        	chan.queue_bind(queue=self.__queue, exchange="ex", routing_key=self.__queue)
-
+		# listen on the http side	
+		httpdispatcher.register_listener("/comet/client/" + uid, self.listen)
 		print("registered " + user)
 
 	def listen(self, req):
 		msgs = []
-		while True:
-			msg = chan.basic_get(queue=self.__queue)
-			if msg is None:
-				api.sleep()
-			else:
-				while True:
-					msgs.append(msg.body)
-					msg = chan.basic_get(queue=self.__queue)
-					if msg is None:
-						req.write("[" + ",".join(msgs) + "]")
-						return
-					else:
-						msgs.append(msg.body)
-						chan.basic_ack(msg.delivery_tag)
-	
+		msg = self.__chan.basic_get(queue=self.__queue)
+		while msg is None:
+			api.sleep()
+			msg = self.__chan.basic_get(queue=self.__queue)
+		
+		while msg is not None:
+			msgs.append(msg.body)
+			self.__chan.basic_ack(msg.delivery_tag)
+			msg = self.__chan.basic_get(queue=self.__queue)
+		
+		req.write("[" + ",".join(msgs) + "]")
+
 client_queues = {}
 
 def login_handler(msg):
@@ -64,13 +58,9 @@ def login_handler(msg):
 	# assign uid
 
 	if not (msg["user"] in client_queues):	
-		client_queues[msg["user"]] = ClientMessageDispatcher(msg["user"], msg["user"], hd)
+		client_queues[msg["user"]] = ClientMessageQueue(msg["user"], msg["user"], hd)
 
-	# inform the exchange we got a new client
-	mqmsg = amqp.Message(json.dumps({ "type": "subscribe", "user": msg["user"]}))
-	chan.basic_publish(mqmsg, exchange="ex", routing_key="exchange")
-
-	return { "uid": msg["user"] } 
+	return json.dumps({ "uid": msg["user"] })
 
 md = ServerMessageDispatcher({"login": login_handler})
 hd = HTTPDispatcher({"/comet/meta": md.dispatch})
