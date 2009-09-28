@@ -1,25 +1,35 @@
 var mq = (function() {
+	var subscriptions = new Object()
+
 	return {
-		send: function(msg, fn) {
-			$.post("/comet/meta", $.toJSON(msg), fn, "json") 
-		},
-		subscribe: function(types, fn) {
-			function sub() {
+		poll: function(uid) {
+			function _poll() {
 				// send a msg on meta describing the subscriptions
 				$.ajax({
 					type: "GET",
-					url: "/comet/client/" + session.uid,
+					url: "/comet/client/" + uid,
 					dataType: "json",
 					success: function(data) {
-						fn(data)
-						setTimeout(sub, 0)	
+						$.each(data, function(i, d) {
+							var fn = subscriptions[d.type]
+							if(fn != undefined && fn != null) {
+								fn(d)
+							}
+						})
+				
+						setTimeout(_poll, 0)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						setTimeout(sub, 0)	
+						setTimeout(_poll, 0)	
 					}})
 			}
-
-			sub()
+			_poll()
+		},
+		send: function(msg, fn) {
+			$.post("/comet/meta", $.toJSON(msg), fn, "json") 
+		},
+		subscribe: function(topic, fn) {
+			subscriptions[topic] = fn
 		}
 	}
 })()
