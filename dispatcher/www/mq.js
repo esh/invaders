@@ -12,10 +12,10 @@ var mq = (function() {
 					dataType: "json",
 					success: function(data) {
 						fn(data)
-						sub()
+						setTimeout(sub, 0)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						sub()
+						setTimeout(sub, 0)	
 					}})
 			}
 
