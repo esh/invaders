@@ -1,6 +1,9 @@
 from eventlet import api
 from amqplib import client_0_8 as amqp
 import simplejson as json
+import sqlite3
+
+login_db = sqlite3.connect("client.db")
 
 class ClientMessageQueue(object):
         def __init__(self, user):
@@ -29,19 +32,25 @@ class ClientMessageQueue(object):
 
 __client_queues__ = {}
 
-def login(msg):
+def login(req, msg):
         # authenticate
-        print msg["user"] + " logged in"
+	cur = login_db.execute("select * from clients where user=?", (msg["user"],))
+	row = cur.fetchone()
+	# hash the password and compare it to the database
+	if row is not None:
+		print msg["user"] + " logged in"
 
-	# find uid
-	uid = msg["user"]
+		# find uid
+		uid = msg["user"]
 
-	# bind to mq if needed
-	client = "/comet/client/" + uid
-        if not (client in __client_queues__):
-                __client_queues__[client] = ClientMessageQueue(msg["user"])
+		# bind to mq if needed
+		client = "/comet/client/" + uid
+		if not (client in __client_queues__):
+			__client_queues__[client] = ClientMessageQueue(msg["user"])
 
-        return json.dumps({"uid": uid})
+		return req.write(json.dumps({"uid": uid}))
+	else:
+		req.error(401)
 
 def handle(req):
 	if req.path() in __client_queues__:

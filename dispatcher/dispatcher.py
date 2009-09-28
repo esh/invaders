@@ -10,10 +10,10 @@ class Dispatcher(object):
 		if req.path() == "/comet/meta":
 			msg = json.loads(req.read_body())
 			if msg["type"] == "login":
-				req.write(client.login(msg))
+				client.login(req, msg)
 			else:
 				# push it into the right queue
-				raise "not yet implemented"
+				raise Exception("not yet implemented")
 
 		elif req.path().startswith("/comet/client/"):
 			client.handle(req)
