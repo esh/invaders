@@ -1,12 +1,15 @@
 from eventlet import api
 import mq
+import time
 import simplejson as json
 import sqlite3
 
 login_db = sqlite3.connect("client.db")
+__client_queues__ = {}
 
 class ClientMessageQueue(object):
         def __init__(self, user):
+		self.user = user
                 self.__queue = "client." + user
                 self.__chan = mq.conn().channel()
                 self.__chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
@@ -30,7 +33,9 @@ class ClientMessageQueue(object):
 
                 req.write("[" + ",".join(msgs) + "]")
 
-__client_queues__ = {}
+		# update last
+		login_db.execute("update clients set last=? where user=?", (time.time(), self.user))
+		login_db.commit()
 
 def login(req, msg):
         # authenticate
@@ -42,6 +47,9 @@ def login(req, msg):
 
 		# find uid
 		uid = msg["user"]
+
+		login_db.execute("update clients set status='online', uid=?, last=? where user=?", (uid, time.time(), msg["user"]))
+		login_db.commit()
 
 		# bind to mq if needed
 		client = "/comet/client/" + uid
