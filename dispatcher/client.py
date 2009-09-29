@@ -1,5 +1,5 @@
 from eventlet import api
-from amqplib import client_0_8 as amqp
+import mq
 import simplejson as json
 import sqlite3
 
@@ -8,13 +8,13 @@ login_db = sqlite3.connect("client.db")
 class ClientMessageQueue(object):
         def __init__(self, user):
                 self.__queue = "client." + user
-                conn = amqp.Connection(host="localhost:5672 ", userid="guest", password="guest", virtual_host="/",insist=False)
-                self.__chan = conn.channel()
+                self.__chan = mq.conn().channel()
                 self.__chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
                 self.__chan.queue_declare(queue=self.__queue, durable=False,exclusive=False, auto_delete=True)
-                self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key= "depth")
-
-                print("registered " + user)
+                self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key="depth")
+		self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key="chat")
+                
+		print("registered " + user)
 
         def listen(self, req):
                 msgs = []
@@ -56,4 +56,5 @@ def handle(req):
 	if req.path() in __client_queues__:
 		__client_queues__[req.path()].listen(req)
 	else:
-		req.error(401)
+		req.response(401)
+		req.write("")

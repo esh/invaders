@@ -20,6 +20,9 @@ dispatcher.register("login", function() {
 									$("#chat_input").val("")
 								} 
 							})
+							mq.subscribe("chat", function(data) {
+								$("#chat_area").html($("#chat_area").html() + "<br/>" + data["text"])
+							}) 
 
 							dispatcher.run("market")
 						})
