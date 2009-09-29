@@ -7,8 +7,22 @@ dispatcher.register("login", function() {
 					pass: $("#password").val()
 				}, function(data, status) {
 					if(status == "success") {
-						mq.poll(data.uid)
-						dispatcher.run("market")
+						$("body").load("/view/main.html", null, function(res, status, req) {
+							mq.poll(data.uid)
+
+							// setup chat
+							$("#chat_input").keyup(function(e) {
+								if(e.keyCode==13) {
+									mq.send({
+										type: "chat",
+										text: $("#chat_input").val()
+									})
+									$("#chat_input").val("")
+								} 
+							})
+
+							dispatcher.run("market")
+						})
 					} else alert("bad username/password")
 				})
 		})	
