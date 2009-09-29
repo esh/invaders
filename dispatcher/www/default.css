@@ -1,0 +1,39 @@
+body {
+	margin:0;
+	padding:0;
+}
+
+#status {
+	height: 25px;
+	width: 100%;
+	position: absolute;
+	top: 0px;
+	background-color: blue;
+}
+
+#main {
+	position: absolute;
+	top: 25px;
+	bottom: 150px;
+	width: 100%;
+}
+
+#chat {
+	height: 150px;
+	width: 100%;
+	position: absolute;
+	bottom: 0px;
+	text-align: center;
+}
+
+#chat div {
+	height: 120px;
+	width: 99%;
+	text-align:left;
+	overflow: scroll;
+}
+
+#chat input {
+	height: 25px;
+	width: 99%;
+}

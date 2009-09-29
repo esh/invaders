@@ -1,17 +1,17 @@
 dispatcher.register("main", function() {
 	$("body").load("/view/main.html", null, function(res, status, req) {
 		// setup chat
-		$("#chat_input").keyup(function(e) {
+		$("#chat input").keyup(function(e) {
 			if(e.keyCode==13) {
 				mq.send({
 					type: "chat",
-					text: $("#chat_input").val()
+					text: $("#chat input").val()
 				})
-				$("#chat_input").val("")
+				$("#chat input").val("")
 			} 
 		})
 		mq.subscribe("chat", function(data) {
-			$("#chat_area").html($("#chat_area").html() + "<br/>" + data["text"])
+			$("#chat div").html($("#chat div").html() + "<br/>" + data["text"])
 		}) 
 
 		dispatcher.run("market")
