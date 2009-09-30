@@ -8,6 +8,8 @@ var mq = (function() {
 				$.ajax({
 					type: "GET",
 					url: "/comet/client/" + uid,
+					async: true,
+					cache: false,
 					dataType: "json",
 					success: function(data) {
 						$.each(data, function(i, d) {
@@ -17,10 +19,10 @@ var mq = (function() {
 							}
 						})
 				
-						setTimeout(_poll, 0)	
+						setTimeout(_poll, 1000)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						setTimeout(_poll, 0)	
+						setTimeout(_poll, 5000)	
 					}})
 			}
 			_poll()
