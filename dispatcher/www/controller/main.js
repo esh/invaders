@@ -11,9 +11,9 @@ dispatcher.register("main", function() {
 			} 
 		})
 		mq.subscribe("chat", function(data) {
-			$("#chat div").html($("#chat div").html() + "<br/>" + data["text"])
+			$("#chat div").append("<br/>" + data["text"])
 		}) 
 
-		dispatcher.run("market")
+		dispatcher.run("farm")
 	})
 })

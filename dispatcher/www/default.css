@@ -16,6 +16,18 @@ body {
 	top: 25px;
 	bottom: 150px;
 	width: 100%;
+	background-color: yellow;
+}
+
+#nav {
+	float: left;
+	width: 20%;
+}
+
+#pane {
+	float:left;
+	width: 80%;
+	background-color: green;
 }
 
 #chat {
