@@ -1,8 +1,11 @@
 var mq = (function() {
 	var subscriptions = new Object()
+	var uid 
 
 	return {
-		poll: function(uid) {
+		poll: function(_uid) {
+			uid = _uid
+
 			function _poll() {
 				// send a msg on meta describing the subscriptions
 				$.ajax({
@@ -28,6 +31,7 @@ var mq = (function() {
 			_poll()
 		},
 		send: function(msg, fn) {
+			msg["uid"] = uid
 			$.post("/comet/meta", $.toJSON(msg), fn, "json") 
 		},
 		subscribe: function(topic, fn) {

@@ -73,6 +73,13 @@ def handle(req):
 		req.response(401)
 		req.write("")
 
+def resolve(uid):
+	client = "/comet/client/" + uid
+	if client not in _client_queues:
+		raise Exception("client does not exist")
+	else:
+		return _client_queues[client].user
+
 def _check_timeout():
 	now = time.time()
 	for client in _client_queues:

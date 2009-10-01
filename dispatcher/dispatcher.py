@@ -1,11 +1,9 @@
 from eventlet import api, httpd, coros, util
-import mq
 import simplejson as json
 import client
+import chat
  
 util.wrap_socket_with_coroutine_socket()
-chan = mq.conn().channel()
-chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
 
 class Dispatcher(object):
 	def handle_request(self, req):
@@ -14,8 +12,7 @@ class Dispatcher(object):
 			if msg["type"] == "login":
 				client.login(req, msg)
 			elif msg["type"] == "chat":
-				chan.basic_publish(mq.msg(msg), exchange="ex", routing_key="chat")
-				req.write("")	
+				chat.broadcast(req, msg)	
 			else:
 				# push it into the right queue
 				raise Exception("not yet implemented")
