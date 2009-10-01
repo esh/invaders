@@ -7,7 +7,7 @@ var dispatcher = (function() {
 				$.getScript("/controller/" + controller + ".js", function() {
 					controllers[controller](params)
 				})				
-			} else controllers[controller].run(params)
+			} else controllers[controller](params)
 		},
 		register: function(controller, fn) {
 			controllers[controller] = fn 

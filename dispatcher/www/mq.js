@@ -19,7 +19,7 @@ var mq = (function() {
 							}
 						})
 				
-						setTimeout(_poll, 1000)	
+						setTimeout(_poll, 50)	
 					},
 					error: function(XMLHttpRequest, status, error) {
 						setTimeout(_poll, 5000)	
@@ -32,6 +32,9 @@ var mq = (function() {
 		},
 		subscribe: function(topic, fn) {
 			subscriptions[topic] = fn
+		},
+		unsubscribe: function(topic) {
+			delete subscriptions[topic]
 		}
 	}
 })()
