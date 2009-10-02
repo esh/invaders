@@ -1,3 +1,4 @@
 *.swp
 *.pyc
 dispatcher/client.db
+world/world.db
