@@ -1,1 +1,1 @@
-lib/sqlitejdbc-v056.jar
+lib/commons-cli-1.1.jar:lib/commons-io-1.2.jar:lib/rabbitmq-client.jar:lib/sqlitejdbc-v056.jar
