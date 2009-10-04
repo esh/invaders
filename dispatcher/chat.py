@@ -3,7 +3,6 @@ import simplejson as json
 import client
 
 chan = mq.conn().channel()
-chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
 
 def broadcast(req, msg):
 	msg["user"] = client.resolve(msg["uid"])
