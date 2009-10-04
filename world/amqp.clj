@@ -20,18 +20,22 @@
 		(.exchangeDeclare ch exchange-name exchange-type)
 		ch))	
 
-(defn create-queue [channel queue]
-	(.queueDeclare channel queue))
+(defn declare-queue [channel queue-name]
+	(.queueDeclare channel queue-name))
 
-(defn bind-queue [channel queue exchange routing-key]
-	(.queueBind channel queue exchange routing-key))
+(defn bind-queue [channel queue-name exchange-name routing-key]
+	(.queueBind channel queue-name exchange-name routing-key))
 
-(defn publish [channel exchange routing-key message]
-	(.basicPublish channel exchange routing-key nil (.getBytes message)))
+(defn publish [channel exchange-name routing-key message]
+	(.basicPublish channel exchange-name routing-key nil (.getBytes message)))
 
-(defn subscribe [channel queue fn]
+(defn subscribe [channel queue-name fn]
 	(let [consumer (new QueueingConsumer channel)]
-		(.basicConsume channel queue, true, consumer)
+		(.basicConsume channel queue-name, false, consumer)
 		(loop [delivery (.nextDelivery consumer)]
-
+			(try
+				(fn (new String (.getBody delivery)))
+				(.basicAck channel (.getDeliveryTag (.getEnvelope delivery)) false)
+				(catch Exception e
+					(.printStackTrace e)))
 			(recur (.nextDelivery consumer)))))
