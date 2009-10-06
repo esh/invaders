@@ -9,14 +9,27 @@
 	{ :classname "org.sqlite.JDBC"
 	  :subprotocol "sqlite"
 	  :subname "world.db" })
-	 
-(defn snapshot [user]
-	(with-connection *db*
-		(with-query-results results ["select * from possessions"]
-			(print results))))
+	
+(def *user-possessions-map* (atom {}))
 
-(let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
-      chan (amqp/create-channel conn "ex" "topic")]
-	(amqp/declare-queue chan "world")
-	(amqp/bind-queue chan "world" "ex" "world")
-	(amqp/subscribe chan "world" #(println (read-json-string %))))  
+(defstruct possession-struct :user :possesions)
+
+(defn create-user [user]
+	(let [m @*user-possessions-map*
+	      possessions (ref {})
+	      key (keyword user)
+              m (assoc m key possessions)]  
+		(reset! *user-possessions-map* m)
+		possessions)) 
+ 
+(defn load-possessions []
+	(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
+		(dorun (map (fn [row]
+			(let [user (keyword (:owner row))
+			      item (keyword (:item row))
+			      qty (:qty row)]
+				(if (not (contains? @*user-possessions-map* user))
+              				(let [m (assoc @*user-possessions-map* user (ref {}))]  
+						(reset! *user-possessions-map* m)))
+					(let [m (user @*user-possessions-map*)]
+						(println row)))) results)))))
