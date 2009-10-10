@@ -3,7 +3,5 @@ dispatcher.register("farm", function() {
 		$("#visit_market").click(function() {
 			dispatcher.run("market")
 		})
-
-		mq.send({ type: "world", action: "snapshot" }, function() { alert("done")})	
 	})
 })

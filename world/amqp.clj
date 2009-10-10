@@ -32,10 +32,11 @@
 (defn subscribe [channel queue-name fn]
 	(let [consumer (new QueueingConsumer channel)]
 		(.basicConsume channel queue-name, false, consumer)
-		(loop [delivery (.nextDelivery consumer)]
-			(try
-				(fn (new String (.getBody delivery)))
-				(.basicAck channel (.getDeliveryTag (.getEnvelope delivery)) false)
-				(catch Exception e
-					(.printStackTrace e)))
-			(recur (.nextDelivery consumer)))))
+		(.start (new Thread
+			#((loop [delivery (.nextDelivery consumer)]
+				(try
+					(fn (new String (.getBody delivery)))
+					(.basicAck channel (.getDeliveryTag (.getEnvelope delivery)) false)
+					(catch Exception e
+						(.printStackTrace e)))
+				(recur (.nextDelivery consumer))))))))

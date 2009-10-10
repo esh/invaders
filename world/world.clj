@@ -29,6 +29,18 @@
 			      item (keyword (:item row))
 			      qty (:qty row)
 			      user-possession-ref (user @*user-possessions-atom*)]
+				(println "loading " user)
 				(dosync (commute user-possession-ref
 						 (fn [m item qty] (assoc m item qty))
 						 item qty)))))))
+
+
+(load-possessions)
+
+;listen to world
+(let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
+      chan (amqp/create-channel conn "ex" "topic")]
+	(amqp/declare-queue chan "world")
+	(amqp/bind-queue chan "world" "ex" "world")
+	(amqp/subscribe chan "world"
+		#(println (read-json-string %))))  
