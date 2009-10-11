@@ -16,6 +16,7 @@ class ClientMessageQueue(object):
               	self.__conn = mq.conn() 
 		self.__chan = self.__conn.channel()
                 self.__chan.queue_declare(queue=self.__queue, durable=False,exclusive=False, auto_delete=True)
+		self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key="client." + user)
                 self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key="depth")
 		self.__chan.queue_bind(queue=self.__queue, exchange="ex", routing_key="chat")
                 
