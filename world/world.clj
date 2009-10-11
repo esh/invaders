@@ -1,6 +1,8 @@
 (ns world
 	(:use [clojure.contrib.sql :only (with-connection with-query-results)])
 	(:use [clojure.contrib.json.read])
+	(:use [clojure.contrib.json.write])
+	(:use [clojure.walk])
 	(:require [amqp]))
 
 (. Class (forName "org.sqlite.JDBC"))
@@ -43,4 +45,11 @@
 	(amqp/declare-queue chan "world")
 	(amqp/bind-queue chan "world" "ex" "world")
 	(amqp/subscribe chan "world"
-		#(println (read-json-string %))))  
+		(fn [msg]
+			(let [msg (keywordize-keys (read-json-string msg))
+			      user (:user msg)
+			      snapshot (assoc
+				@((keyword user) @*user-possessions-atom*)
+				:user user :type "snapshot")]
+				(println snapshot)		
+				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
