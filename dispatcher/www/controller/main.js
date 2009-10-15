@@ -14,9 +14,10 @@ dispatcher.register("main", function() {
 			$("#chat div").append("<br/>" + data["user"] + "> " + data["text"])
 		}) 
 
-
 		mq.subscribe("snapshot", function(data) {
-			$("#chat div").append("<br/>" + data)
+			for(var key in data) {
+				if(key != "type") $("#status").append(key + ": " + data[key] + "&nbsp;")
+			}
 		})
 
 		// ask for a snapshot		
