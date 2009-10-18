@@ -15,7 +15,6 @@ def dispatch(env, start_response):
 	if path == "/comet/meta":
 		start_response('200 OK', [('Content-Type', 'text/plain')])
 		body = env['wsgi.input'].read()
-		print body
 		msg = json.loads(body)
 		if msg["type"] == "login":
 			return [client.login(msg)]

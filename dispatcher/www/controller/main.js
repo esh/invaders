@@ -23,6 +23,6 @@ dispatcher.register("main", function() {
 		// ask for a snapshot		
 		mq.send({ type: "world", action: "snapshot" })
 	
-		dispatcher.run("farm")
+		dispatcher.run("universe")
 	})
 })

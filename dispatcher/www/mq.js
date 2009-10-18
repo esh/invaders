@@ -25,7 +25,8 @@ var mq = (function() {
 						setTimeout(_poll, 50)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						setTimeout(_poll, 5000)	
+						alert(error)
+						setTimeout(_poll, 50)	
 					}})
 			}
 			_poll()
