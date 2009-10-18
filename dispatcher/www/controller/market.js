@@ -4,9 +4,9 @@ dispatcher.register("market", function() {
 			$("#pane").append("instrument:" + data.instrument + " ask:" + data.ask + " bid:" + data.bid + "<br/>")
 		})
 
-		$("#back_to_farm").click(function() {
+		$("#back_to_universe").click(function() {
 			mq.unsubscribe("exchange")
-			dispatcher.run("farm")
+			dispatcher.run("universe")
 		})
 	})
 })

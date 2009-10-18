@@ -15,17 +15,21 @@ var mq = (function() {
 					cache: false,
 					dataType: "json",
 					success: function(data) {
-						$.each(data, function(i, d) {
-							var fn = subscriptions[d.type]
-							if(fn != undefined && fn != null) {
-								fn(d)
-							}
-						})
-				
+						try {
+							$.each(data, function(i, d) {
+								var fn = subscriptions[d.type]
+								if(fn != undefined && fn != null) {
+									fn(d)
+								}
+							})
+						} catch(ex) {
+							alert(ex)	
+						}
+
 						setTimeout(_poll, 50)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						alert(error)
+						alert("wtf:" + status)
 						setTimeout(_poll, 50)	
 					}})
 			}
