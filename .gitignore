@@ -1,4 +1,3 @@
-*.swp
+.gitignore
+dispatcher/clients.db
 *.pyc
-dispatcher/client.db
-world/world.db
