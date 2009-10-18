@@ -22,7 +22,7 @@ class ClientMessageQueue(object):
                 
 		print("registered " + user)
 
-        def listen(self, req):
+        def listen(self):
                 msgs = []
                 msg = self.__chan.basic_get(queue=self.__queue)
                 while msg is None:
@@ -34,8 +34,8 @@ class ClientMessageQueue(object):
                         self.__chan.basic_ack(msg.delivery_tag)
                         msg = self.__chan.basic_get(queue=self.__queue)
 
-                req.write("[" + ",".join(msgs) + "]")
 		self.last = time.time()
+                return "[" + ",".join(msgs) + "]"
 
 	def disconnect(self):
 		print "disconecting " + user
@@ -43,7 +43,7 @@ class ClientMessageQueue(object):
 		self.__chan.close()
 		self.__conn.close()	
 	
-def login(req, msg):
+def login(msg):
         # authenticate
 	cur = login_db.execute("select * from clients where user=?", (msg["user"],))
 	row = cur.fetchone()
@@ -62,16 +62,15 @@ def login(req, msg):
 		if not (client in _client_queues):
 			_client_queues[client] = ClientMessageQueue(msg["user"])
 
-		return req.write(json.dumps({"uid": uid}))
+		return json.dumps({"uid": uid})
 	else:
-		req.error(401)
+		raise Exception("unauthorized")
 
-def handle(req):
-	if req.path() in _client_queues:
-		_client_queues[req.path()].listen(req)
+def handle(env):
+	if env['PATH_INFO'] in _client_queues:
+		return _client_queues[env['PATH_INFO']].listen()
 	else:
-		req.response(401)
-		req.write("")
+		raise Exception("unauthorized")		
 
 def resolve(uid):
 	client = "/comet/client/" + uid

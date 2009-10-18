@@ -31,7 +31,7 @@ var mq = (function() {
 			_poll()
 		},
 		send: function(msg, fn) {
-			msg["uid"] = uid
+			if(uid != undefined) msg["uid"] = uid
 			$.post("/comet/meta", $.toJSON(msg), fn, "json") 
 		},
 		subscribe: function(topic, fn) {

@@ -1,4 +1,4 @@
-from eventlet import api, httpd, coros, util
+from eventlet import api, wsgi, coros, util
 import simplejson as json
 import mq
 import client
@@ -9,28 +9,32 @@ util.wrap_socket_with_coroutine_socket()
 chan = mq.conn().channel()
 chan.exchange_declare(exchange="ex", type="topic", durable=False, auto_delete=True)
 
-class Dispatcher(object):
-	def handle_request(self, req):
-		if req.path() == "/comet/meta":
-			msg = json.loads(req.read_body())
-			if msg["type"] == "login":
-				client.login(req, msg)
-			elif msg["type"] == "chat":
-				chat.broadcast(req, msg)
-			elif msg["type"] == "world":
-				msg["user"] = client.resolve(msg["uid"])
-				del msg["uid"]
-				chan.basic_publish(mq.msg(msg), exchange="ex", routing_key="world")
-				req.write("")	
-			else:
-				# push it into the right queue
-				raise Exception("not yet implemented")
+def dispatch(env, start_response):
+	path = env['PATH_INFO']
 
-		elif req.path().startswith("/comet/client/"):
-			client.handle(req)
+	if path == "/comet/meta":
+		start_response('200 OK', [('Content-Type', 'text/plain')])
+		body = env['wsgi.input'].read()
+		print body
+		msg = json.loads(body)
+		if msg["type"] == "login":
+			return [client.login(msg)]
+		elif msg["type"] == "chat":
+			chat.broadcast(msg)
+		elif msg["type"] == "world":
+			msg["user"] = client.resolve(msg["uid"])
+			del msg["uid"]
+			chan.basic_publish(mq.msg(msg), exchange="ex", routing_key="world")
 		else:
-			req.response(401)
-			req.write("")
+			# push it into the right queue
+			raise Exception("not yet implemented")
+
+		return [""]	
+	elif path.startswith("/comet/client/"):
+		start_response('200 OK', [('Content-Type', 'text/plain')])
+		return [client.handle(env)]
+	else:
+		return ["401"]
 
 # Start the server
-httpd.server(api.tcp_listener(('0.0.0.0', 8080)), Dispatcher())
+wsgi.server(api.tcp_listener(('0.0.0.0', 8080)), dispatch)
