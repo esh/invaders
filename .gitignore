@@ -2,4 +2,4 @@
 dispatcher/client.db
 *.pyc
 *.swp
-world/world.db
+universe/universe.db

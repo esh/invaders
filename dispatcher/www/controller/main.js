@@ -21,7 +21,7 @@ dispatcher.register("main", function() {
 		})
 
 		// ask for a snapshot		
-		mq.send({ type: "world", action: "snapshot" })
+		mq.send({ type: "universe", action: "snapshot" })
 	
 		dispatcher.run("universe")
 	})

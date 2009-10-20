@@ -20,10 +20,10 @@ def dispatch(env, start_response):
 			return [client.login(msg)]
 		elif msg["type"] == "chat":
 			chat.broadcast(msg)
-		elif msg["type"] == "world":
+		elif msg["type"] == "universe":
 			msg["user"] = client.resolve(msg["uid"])
 			del msg["uid"]
-			chan.basic_publish(mq.msg(msg), exchange="ex", routing_key="world")
+			chan.basic_publish(mq.msg(msg), exchange="ex", routing_key="universe")
 		else:
 			# push it into the right queue
 			raise Exception("not yet implemented")
