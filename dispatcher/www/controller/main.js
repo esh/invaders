@@ -12,6 +12,7 @@ dispatcher.register("main", function() {
 		})
 		mq.subscribe("chat", function(data) {
 			$("#chat div").append("<br/>" + data["user"] + "> " + data["text"])
+			$("#chat div").scrollTo("max")
 		}) 
 
 		mq.subscribe("snapshot", function(data) {
