@@ -23,13 +23,11 @@ var mq = (function() {
 								}
 							})
 						} catch(ex) {
-							alert(ex)	
 						}
 
 						setTimeout(_poll, 50)	
 					},
 					error: function(XMLHttpRequest, status, error) {
-						alert("wtf:" + status)
 						setTimeout(_poll, 50)	
 					}})
 			}

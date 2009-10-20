@@ -10,6 +10,7 @@ _client_queues = {}
 
 class ClientMessageQueue(object):
         def __init__(self, user):
+		self.__count = 0
 		self.user = user
 		self.last = time.time()
                 self.__queue = "client." + user
@@ -23,6 +24,8 @@ class ClientMessageQueue(object):
 		print("registered " + user)
 
         def listen(self):
+		self.__count = self.__count + 1
+		print str(self.__count) + " listeners"
                 msgs = []
                 msg = self.__chan.basic_get(queue=self.__queue)
                 while msg is None:
@@ -35,6 +38,9 @@ class ClientMessageQueue(object):
                         msg = self.__chan.basic_get(queue=self.__queue)
 
 		self.last = time.time()
+		print self.user + " recv'd " + str(len(msgs)) + " msgs"
+
+		self.__count = self.__count - 1
                 return "[" + ",".join(msgs) + "]"
 
 	def disconnect(self):
@@ -68,6 +74,7 @@ def login(msg):
 
 def handle(env):
 	if env['PATH_INFO'] in _client_queues:
+		print env['PATH_INFO'] + " is listening"
 		return _client_queues[env['PATH_INFO']].listen()
 	else:
 		raise Exception("unauthorized")		
