@@ -10,7 +10,6 @@ _client_queues = {}
 
 class ClientMessageQueue(object):
         def __init__(self, user):
-		self.__count = 0
 		self.user = user
 		self.last = time.time()
                 self.__queue = "client." + user
@@ -27,25 +26,18 @@ class ClientMessageQueue(object):
 		last = time.time()
 		self.last = last 
 
-		self.__count = self.__count + 1
-		print str(self.__count) + " listeners"
-
                 msgs = []
-		while True:
-			if last != self.last:
-				return "timed out"
-
+		while last == self.last:
                 	msg = self.__chan.basic_get(queue=self.__queue)
 			if msg is not None:
 	                        msgs.append(msg.body)
 				self.__chan.basic_ack(msg.delivery_tag)
 			elif msg is None and len(msgs) > 0:
-				print self.user + " recv'd " + str(len(msgs)) + " msgs"
-				self.__count = self.__count - 1
-
                 		return "[" + ",".join(msgs) + "]"
 			else:
 				api.sleep()
+
+		return "timeout"
 
 	def disconnect(self):
 		print "disconecting " + user
@@ -78,7 +70,6 @@ def login(msg):
 
 def handle(env):
 	if env['PATH_INFO'] in _client_queues:
-		print env['PATH_INFO'] + " is listening"
 		return _client_queues[env['PATH_INFO']].listen()
 	else:
 		raise Exception("unauthorized")		
