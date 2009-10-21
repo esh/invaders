@@ -7,24 +7,19 @@
 
 (. Class (forName "org.sqlite.JDBC"))
 
-(def *db* 
-	{ :classname "org.sqlite.JDBC"
-	  :subprotocol "sqlite"
-	  :subname "universe.db" })
+(def *db* {:classname "org.sqlite.JDBC"
+	   :subprotocol "sqlite"
+	   :subname "universe.db"})
+
+(def *items* (with-connection *db* (with-query-results results ["select name from items"]
+	(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
 
 (def *user-possessions-atom* (atom {}))
 
-(defn init-items []
-	(with-connection *db* (with-query-results results ["select name from items"]
-		(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
-
-(defn load-users []
-	(let [items (init-items)]
-		(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
-			(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref items))) {} results)))))	
-
 (defn load-possessions []
-	(reset! *user-possessions-atom* (load-users))
+	(reset! *user-possessions-atom* 
+		(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
+				(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
 	(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 		(doseq [row results]
 			(let [user (keyword (:owner row))
