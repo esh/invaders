@@ -14,10 +14,13 @@
 (def *items* (with-connection *db* (with-query-results results ["select name from items"]
 	(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
 
-(def *user-possessions-atom* (atom {}))
+(def *ships* (with-connection *db* (with-query-results results ["select name, description from ships"]
+	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
+
+(def *possessions-atom* (atom {}))
 
 (defn load-possessions []
-	(reset! *user-possessions-atom* 
+	(reset! *possessions-atom* 
 		(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
 				(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
 	(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
@@ -25,12 +28,10 @@
 			(let [user (keyword (:owner row))
 			      item (keyword (:item row))
 			      qty (:qty row)
-			      user-possession-ref (user @*user-possessions-atom*)]
-				(println "loading " user)
+			      user-possession-ref (user @*possessions-atom*)]
 				(dosync (commute user-possession-ref
 						 (fn [m item qty] (assoc m item qty))
 						 item qty)))))))
-
 
 (load-possessions)
 
@@ -44,7 +45,7 @@
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
 			      snapshot (assoc
-				@((keyword user) @*user-possessions-atom*)
+				@((keyword user) @*possessions-atom*)
 				:user user :type "snapshot")]
 				(println snapshot)		
 				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
