@@ -14,7 +14,7 @@
 (def *items* (with-connection *db* (with-query-results results ["select name from items"]
 	(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
 
-(def *ships* (with-connection *db* (with-query-results results ["select name, description from ships"]
+(def *ships* (with-connection *db* (with-query-results results ["select * from ships"]
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
 (def *possessions-atom* (atom {}))
@@ -35,7 +35,7 @@
 
 (load-possessions)
 
-(def *registry* (with-connection *db* (with-query-results results ["select * from registry"] 
+(def *registry* (with-connection *db* (with-query-results results ["select x, y, owner, shields from registry"] 
 	(reduce (fn [registry row] (conj registry row)) [] results))))	
 
 ;listen to universe
