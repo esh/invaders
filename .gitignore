@@ -1,5 +1,3 @@
 .gitignore
-dispatcher/client.db
 *.pyc
 *.swp
-universe/universe.db
