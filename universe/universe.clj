@@ -35,6 +35,9 @@
 
 (load-possessions)
 
+(def *registry* (with-connection *db* (with-query-results results ["select * from registry"] 
+	(reduce (fn [registry row] (conj registry row)) [] results))))	
+
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
       chan (amqp/create-channel conn "ex" "topic")]
