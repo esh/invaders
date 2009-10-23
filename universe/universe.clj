@@ -39,8 +39,15 @@
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [registry row] (conj registry row)) [] results))))
 
-(defn build [rows] 
-	(reduce (fn [rows val] (assoc rows [(:x val) (:y val)] val)) {} rows))
+(defn build [coll]
+	(reduce (fn [coll val]
+			(let [x (:x val)
+			      y (:y val)] 
+				(assoc coll [x y] 
+					(if (contains? coll [x y])
+						(conj (get coll [x y]) val)
+						[val]))))
+		{} coll))
 
 (def *mapping* (build (into (load-universe "resources") (load-universe "ships"))))
 
