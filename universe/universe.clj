@@ -47,7 +47,7 @@
 						[val]))))
 		{} coll))
 
-(def *mapping-atom* (atom (build (into (load-universe "resources") (load-universe "ships")))))
+(def *mapping-ref* (ref (build (into (load-universe "resources") (load-universe "ships")))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
