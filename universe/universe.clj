@@ -18,20 +18,15 @@
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
 
-;load possessions
-(def *possessions-atom*
-	(atom (with-connection *db* (with-query-results results ["select distinct owner from possessions"]
-		(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results)))))
-
-(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
-	(doseq [row results]
-		(let [user (keyword (:owner row))
-		      item (keyword (:item row))
-		      qty (:qty row)
-		      user-possession-ref (user @*possessions-atom*)]
-			(dosync (commute user-possession-ref
-				(fn [m item qty] (assoc m item qty))
-				item qty))))))
+(def *possessions-ref*  
+	(ref (with-connection *db* 
+		(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
+			(reduce (fn [coll val]
+				(let [user (keyword (:owner val))
+				      item (keyword (:item val))
+				      qty (:qty val)
+				      old (if (contains? coll user) (user coll) {})]
+					(assoc coll user (assoc old item qty)))) {} results))))) 
 				
 (defn load-universe [table-name]
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
