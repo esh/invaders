@@ -17,8 +17,9 @@
 (def *ship-types* (with-connection *db* (with-query-results results ["select * from ship_types"]
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
-(def *possessions-atom* (atom {}))
 
+;load possessions
+(def *possessions-atom* (atom {}))
 (reset! *possessions-atom* 
 	(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
 		(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
@@ -47,7 +48,7 @@
 						[val]))))
 		{} coll))
 
-(def *mapping* (build (into (load-universe "resources") (load-universe "ships"))))
+(def *mapping-atom* (atom (build (into (load-universe "resources") (load-universe "ships")))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
