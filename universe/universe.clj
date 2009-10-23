@@ -19,10 +19,9 @@
 
 
 ;load possessions
-(def *possessions-atom* (atom {}))
-(reset! *possessions-atom* 
-	(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
-		(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
+(def *possessions-atom*
+	(atom (with-connection *db* (with-query-results results ["select distinct owner from possessions"]
+		(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results)))))
 
 (with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 	(doseq [row results]
