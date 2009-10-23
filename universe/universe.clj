@@ -28,7 +28,7 @@
 					(assoc coll user (assoc old item qty))))
 		{} results))))) 
 				
-(defn load-universe [table-name]
+(defn load-table [table-name]
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
@@ -39,7 +39,7 @@
 			      old (if (contains? coll [x y]) (get coll [x y]) [])] 
 				(assoc coll [x y] (conj old val))))
 		{}
-		(into (load-universe "resources") (load-universe "ships")))))
+		(into (load-table "resources") (load-table "ships")))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
