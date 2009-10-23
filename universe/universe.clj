@@ -35,18 +35,14 @@
 
 (init-possessions)
 
-(defn load-registry []
-	(with-connection *db* (with-query-results results ["select * from ships"] 
-		(reduce (fn [registry row] (conj registry row)) [] results))))
-
-(defn load-universe []
-	(with-connection *db* (with-query-results results ["select * from resources"] 
+(defn load-universe [table-name]
+	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [registry row] (conj registry row)) [] results))))
 
 (defn build [rows] 
 	(reduce (fn [rows val] (assoc rows [(:x val) (:y val)] val)) {} rows))
 
-(def *mapping* (build (into (load-registry) (load-universe))))
+(def *mapping* (build (into (load-universe "resources") (load-universe "ships"))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
