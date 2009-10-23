@@ -32,11 +32,10 @@
 			(dosync (commute user-possession-ref
 				(fn [m item qty] (assoc m item qty))
 				item qty))))))
-
 				
 (defn load-universe [table-name]
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
-		(reduce (fn [registry row] (conj registry row)) [] results))))
+		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
 (defn build [coll]
 	(reduce (fn [coll val]
