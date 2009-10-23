@@ -17,7 +17,6 @@
 (def *ship-types* (with-connection *db* (with-query-results results ["select * from ship_types"]
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
-
 (def *possessions-ref*  
 	(ref (with-connection *db* 
 		(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
@@ -33,15 +32,14 @@
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
-(defn build [coll]
-	(reduce (fn [coll val]
+(def *mapping-ref* 
+	(ref (reduce (fn [coll val]
 			(let [x (:x val)
 			      y (:y val)
 			      old (if (contains? coll [x y]) (get coll [x y]) [])] 
 				(assoc coll [x y] (conj old val))))
-		{} coll))
-
-(def *mapping-ref* (ref (build (into (load-universe "resources") (load-universe "ships")))))
+		{}
+		(into (load-universe "resources") (load-universe "ships")))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
