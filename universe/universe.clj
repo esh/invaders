@@ -26,7 +26,8 @@
 				      item (keyword (:item val))
 				      qty (:qty val)
 				      old (if (contains? coll user) (user coll) {})]
-					(assoc coll user (assoc old item qty)))) {} results))))) 
+					(assoc coll user (assoc old item qty))))
+		{} results))))) 
 				
 (defn load-universe [table-name]
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
@@ -35,11 +36,9 @@
 (defn build [coll]
 	(reduce (fn [coll val]
 			(let [x (:x val)
-			      y (:y val)] 
-				(assoc coll [x y] 
-					(if (contains? coll [x y])
-						(conj (get coll [x y]) val)
-						[val]))))
+			      y (:y val)
+			      old (if (contains? coll [x y]) (get coll [x y]) [])] 
+				(assoc coll [x y] (conj old val))))
 		{} coll))
 
 (def *mapping-ref* (ref (build (into (load-universe "resources") (load-universe "ships")))))
@@ -53,6 +52,6 @@
 		(fn [msg]
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
-			      snapshot (assoc @((keyword user) @*possessions-atom*) :user user :type "snapshot")]
+			      snapshot (assoc ((keyword user) @*possessions-ref*) :user user :type "snapshot")]
 				(println snapshot)		
 				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
