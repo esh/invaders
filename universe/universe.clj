@@ -19,22 +19,21 @@
 
 (def *possessions-atom* (atom {}))
 
-(defn init-possessions []
-	(reset! *possessions-atom* 
-		(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
-				(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
-	(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
-		(doseq [row results]
-			(let [user (keyword (:owner row))
-			      item (keyword (:item row))
-			      qty (:qty row)
-			      user-possession-ref (user @*possessions-atom*)]
-				(dosync (commute user-possession-ref
-						 (fn [m item qty] (assoc m item qty))
-						 item qty)))))))
+(reset! *possessions-atom* 
+	(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
+		(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
 
-(init-possessions)
+(with-connection *db* (with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
+	(doseq [row results]
+		(let [user (keyword (:owner row))
+		      item (keyword (:item row))
+		      qty (:qty row)
+		      user-possession-ref (user @*possessions-atom*)]
+			(dosync (commute user-possession-ref
+				(fn [m item qty] (assoc m item qty))
+				item qty))))))
 
+				
 (defn load-universe [table-name]
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [registry row] (conj registry row)) [] results))))
@@ -60,8 +59,6 @@
 		(fn [msg]
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
-			      snapshot (assoc
-				@((keyword user) @*possessions-atom*)
-				:user user :type "snapshot")]
+			      snapshot (assoc @((keyword user) @*possessions-atom*) :user user :type "snapshot")]
 				(println snapshot)		
 				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
