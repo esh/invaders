@@ -19,7 +19,7 @@
 
 (def *possessions-atom* (atom {}))
 
-(defn load-possessions []
+(defn init-possessions []
 	(reset! *possessions-atom* 
 		(with-connection *db* (with-query-results results ["select distinct owner from possessions"]
 				(reduce (fn [users row] (assoc users (keyword (:owner row)) (ref *items*))) {} results))))	
@@ -33,10 +33,20 @@
 						 (fn [m item qty] (assoc m item qty))
 						 item qty)))))))
 
-(load-possessions)
+(init-possessions)
 
-(def *registry* (with-connection *db* (with-query-results results ["select x, y, owner, shields from registry"] 
-	(reduce (fn [registry row] (conj registry row)) [] results))))	
+(defn load-registry []
+	(with-connection *db* (with-query-results results ["select * from registry"] 
+		(reduce (fn [registry row] (conj registry row)) [] results))))
+
+(defn load-universe []
+	(with-connection *db* (with-query-results results ["select * from universe"] 
+		(reduce (fn [registry row] (conj registry row)) [] results))))
+
+(defn build [rows] 
+	(reduce (fn [rows val] (assoc rows [(:x val) (:y val)] val)) {} rows))
+
+(def *mapping* (build (into (load-registry) (load-universe))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
