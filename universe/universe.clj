@@ -32,7 +32,7 @@
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
-(def *mapping-ref* 
+(def *universe-ref* 
 	(ref (reduce (fn [coll val]
 			(let [x (:x val)
 			      y (:y val)
@@ -51,6 +51,7 @@
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
 			      possessions ((keyword user) @*possessions-ref*)
-			      snapshot {:user user :type "snapshot" :possessions possessions}]
+			      universe @*universe-ref*
+			      snapshot {:user user :type "snapshot" :possessions possessions :universe universe}]
 				(println snapshot)
 				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
