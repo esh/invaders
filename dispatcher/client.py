@@ -35,7 +35,7 @@ class ClientMessageQueue(object):
 			elif msg is None and len(msgs) > 0:
                 		return "[" + ",".join(msgs) + "]"
 			else:
-				api.sleep()
+				api.sleep(0.15)
 
 		return "timeout"
 
