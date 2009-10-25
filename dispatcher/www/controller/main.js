@@ -16,8 +16,9 @@ dispatcher.register("main", function() {
 		}) 
 
 		mq.subscribe("snapshot", function(data) {
-			for(var key in data) {
-				if(key != "type") $("#status").append(key + ": " + data[key] + "&nbsp;")
+			var possessions = data["possessions"]
+			for(var key in possessions) {
+				if(key != "type") $("#status").append(key + ": " + possessions[key] + "&nbsp;")
 			}
 		})
 

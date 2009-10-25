@@ -50,6 +50,7 @@
 		(fn [msg]
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
-			      snapshot (assoc ((keyword user) @*possessions-ref*) :user user :type "snapshot")]
-				(println snapshot)		
+			      possessions ((keyword user) @*possessions-ref*)
+			      snapshot {:user user :type "snapshot" :possessions possessions}]
+				(println snapshot)
 				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
