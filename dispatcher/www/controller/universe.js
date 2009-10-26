@@ -1,7 +1,11 @@
 dispatcher.register("universe", function() {
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
-		$("#visit_market").click(function() {
+		$("#market").click(function() {
 			dispatcher.run("market")
 		})
+		$("#ark_ship").click(function() {
+			dispatcher.run("ark_ship")
+		})
+
 	})
 })
