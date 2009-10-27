@@ -39,6 +39,7 @@ body {
 #pane {
 	float:left;
 	width: 80%;
+	height: 400px;
 	overflow: scroll;
 }
 
