@@ -48,6 +48,8 @@ dispatcher.register("universe", function() {
 						$.each(universe[y][x], function(i, d) {
 							if(d["type"] == "resources") {
 								html.push(d["item"])
+								html.push(":")
+								html.push(d["yield"])
 								html.push("<br/>")
 							}
 						})
