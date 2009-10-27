@@ -39,6 +39,18 @@ body {
 #pane {
 	float:left;
 	width: 80%;
+	overflow: scroll;
 }
 
+table {
+	margin: 0;
+	padding: 0;
+}
+
+td {
+	background-color:black;
+	color: white;
+	width:96px;
+	height:96px;
+}
 
