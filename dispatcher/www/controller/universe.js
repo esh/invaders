@@ -38,6 +38,17 @@ dispatcher.register("universe", function() {
 				var t = extract_key(key)
 				universe[t.y][t.x] = data[key]
 			}
+			
+			var html = new Array()
+			for(var y = 0 ; y <= y_max ; y++) {
+				html.push("<tr>")
+				for(var x = 0 ; x <= x_max ; x++) {
+					html.push("<td>")
+					html.push("</td>")	
+				}
+				html.push("</tr>")
+			}
+			$("#universe").html(html.join(""))	
 		})
 
 		mq.send({ type: "universe", action: "universe" })
