@@ -44,6 +44,14 @@ dispatcher.register("universe", function() {
 				html.push("<tr>")
 				for(var x = 0 ; x <= x_max ; x++) {
 					html.push("<td>")
+					if(universe[y][x] != null) {
+						$.each(universe[y][x], function(i, d) {
+							if(d["type"] == "resources") {
+								html.push(d["item"])
+								html.push("<br/>")
+							}
+						})
+					}
 					html.push("</td>")	
 				}
 				html.push("</tr>")
