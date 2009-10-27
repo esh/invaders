@@ -41,6 +41,19 @@
 		{}
 		(into (load-table "resources") (load-table "ships")))))
 
+(defmulti dispatch #(keyword (:action %)))
+
+(defmethod dispatch :possessions [msg]
+	(let [user (:user msg)
+	      possessions ((keyword user) @*possessions-ref*)]
+		(assoc possessions :type "possessions")))
+
+(defmethod dispatch :universe [msg]
+	(let [user (:user msg)
+      	      universe @*universe-ref*]
+		(assoc universe :type "universe")))
+
+
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
       chan (amqp/create-channel conn "ex" "topic")]
@@ -50,8 +63,6 @@
 		(fn [msg]
 			(let [msg (keywordize-keys (read-json-string msg))
 			      user (:user msg)
-			      possessions ((keyword user) @*possessions-ref*)
-			      universe @*universe-ref*
-			      snapshot {:user user :type "snapshot" :possessions possessions :universe universe}]
-				(println snapshot)
-				(amqp/publish chan "ex" (str "client." user) (json-str snapshot)))))) 
+			      res (dispatch msg)]
+				(println res)
+				(amqp/publish chan "ex" (str "client." user) (json-str res)))))) 

@@ -15,15 +15,13 @@ dispatcher.register("main", function() {
 			$("#chat div").scrollTo("max")
 		}) 
 
-		mq.subscribe("snapshot", function(data) {
-			var possessions = data["possessions"]
-			for(var key in possessions) {
-				if(key != "type") $("#status").append(key + ": " + possessions[key] + "&nbsp;")
+		mq.subscribe("possessions", function(data) {
+			for(var key in data) {
+				if(key != "type") $("#status").append(key + ": " + data[key] + "&nbsp;")
 			}
 		})
 
-		// ask for a snapshot		
-		mq.send({ type: "universe", action: "snapshot" })
+		mq.send({ type: "universe", action: "possessions" })
 	
 		dispatcher.run("universe")
 	})

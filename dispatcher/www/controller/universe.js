@@ -7,5 +7,12 @@ dispatcher.register("universe", function() {
 			dispatcher.run("ark_ship")
 		})
 
+		mq.subscribe("universe", function(data) {
+			for(var key in data) {
+				if(key != "type") $("#pane").append(key + ": " + data[key] + "&nbsp;")
+			}
+		})
+
+		mq.send({ type: "universe", action: "universe" })
 	})
 })
