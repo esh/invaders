@@ -52,6 +52,12 @@ dispatcher.register("universe", function() {
 								html.push(d["yield"])
 								html.push("<br/>")
 							}
+							else if(d["type"] == "ships") {
+								html.push(d["ship_type"])
+								html.push("(")
+								html.push(d["owner"])
+								html.push(")")	
+							}
 						})
 					}
 					html.push("</td>")	
