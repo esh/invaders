@@ -64,7 +64,8 @@ dispatcher.register("universe", function() {
 				}
 				html.push("</tr>")
 			}
-			$("#universe").html(html.join(""))	
+			$("#universe").html(html.join(""))
+			$("#universe").draggable()	
 		})
 
 		mq.send({ type: "universe", action: "universe" })
