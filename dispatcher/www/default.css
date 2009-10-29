@@ -48,8 +48,15 @@ body {
 	overflow: hidden;
 }
 
+table {
+	padding:0;
+	margin:0;
+	border-collapse: collapse;
+}
+
 td {
 	background-color:black;
+	border: solid 1px white;
 	color: white;
 	width:128px;
 	height:128px;
