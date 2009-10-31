@@ -17,6 +17,8 @@ dispatcher.register("universe", function() {
 				}
 			})
 			return html.join("")
+		} else {
+			return ""
 		}
 	}
 	
