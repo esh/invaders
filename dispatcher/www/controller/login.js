@@ -8,6 +8,8 @@ dispatcher.register("login", function() {
 				}, function(data, status) {
 					if(status == "success") {
 						mq.poll(data.uid)
+						session.user = $("#username").val()
+						session.uid = data.uid
 						dispatcher.run("main")
 					} else alert("bad username/password")
 				})

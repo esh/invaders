@@ -21,10 +21,22 @@ dispatcher.register("universe", function() {
 			return ""
 		}
 	}
-	
+
+	function extract_key(key) {
+		key = key.substring(1, key.length - 1)
+		key = key.split(" ")
+		return { x: parseInt(key[0]), y: parseInt(key[1]) }
+	}
+
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
 		var universe = new Array()
-
+		var state = new Object()
+		
+		function select(x,y) {
+			$("#sector h2").html("Sector " + x + ":" + y) 
+			$("#sector div").html(universe_contents(universe[y][x]))
+		}
+		
 		$("#market").click(function() {
 			mq.unsubscribe("universe")
 			dispatcher.run("market")
@@ -35,12 +47,6 @@ dispatcher.register("universe", function() {
 		})
 
 		mq.subscribe("universe", function(data) {
-			function extract_key(key) {
-				key = key.substring(1, key.length - 1)
-				key = key.split(" ")
-				return { x: parseInt(key[0]), y: parseInt(key[1]) }
-			}
-
 			delete data["type"]
 			// find highest row/col
 			var x_max = 0
@@ -89,6 +95,19 @@ dispatcher.register("universe", function() {
 					})	
 				}
 			}
+
+			// find your ark ship
+			for(var key in data) {
+				$.each(data[key], function(i,d) {
+					if(d.type == "ships" && d.ship_type == "ark ship" && session.user == d.owner) {
+						var pos = extract_key(key)
+						state.x = pos.x
+						state.y = pos.y
+					}
+				})
+			}
+	
+			select(state.x,state.y)
 		})
 
 		mq.send({ type: "universe", action: "universe" })
