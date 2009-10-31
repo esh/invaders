@@ -1,4 +1,25 @@
 dispatcher.register("universe", function() {
+	function universe_contents(sector) {
+		if(sector != null) {
+			var html = new Array()
+			$.each(sector, function(i, d) {
+				if(d["type"] == "resources") {
+					html.push(d["item"])
+					html.push(":")
+					html.push(d["yield"])
+					html.push("<br/>")
+				}
+				else if(d["type"] == "ships") {
+					html.push(d["ship_type"])
+					html.push("(")
+					html.push(d["owner"])
+					html.push(")")	
+				}
+			})
+			return html.join("")
+		}
+	}
+	
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
 		var universe = new Array()
 
@@ -48,22 +69,7 @@ dispatcher.register("universe", function() {
 					html.push("_")
 					html.push(y)	
 					html.push("\">")
-					if(universe[y][x] != null) {
-						$.each(universe[y][x], function(i, d) {
-							if(d["type"] == "resources") {
-								html.push(d["item"])
-								html.push(":")
-								html.push(d["yield"])
-								html.push("<br/>")
-							}
-							else if(d["type"] == "ships") {
-								html.push(d["ship_type"])
-								html.push("(")
-								html.push(d["owner"])
-								html.push(")")	
-							}
-						})
-					}
+					html.push(universe_contents(universe[y][x]))
 					html.push("</td>")	
 				}
 				html.push("</tr>")
@@ -76,7 +82,8 @@ dispatcher.register("universe", function() {
 				for(var x = 0 ; x <= x_max ; x++) {
 					$("#" + x + "_" + y).click(function() {
 						var xy = $(this).attr("id").split("_")
-						alert(xy[0] + ":" + xy[1])
+						$("#sector h2").html("Sector " + xy.join(":"))
+						$("#sector div").html(universe_contents(universe[xy[1]][xy[0]]))	
 					})	
 				}
 			}
