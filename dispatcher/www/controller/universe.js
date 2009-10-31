@@ -43,7 +43,11 @@ dispatcher.register("universe", function() {
 			for(var y = 0 ; y <= y_max ; y++) {
 				html.push("<tr>")
 				for(var x = 0 ; x <= x_max ; x++) {
-					html.push("<td>")
+					html.push("<td id=\"")
+					html.push(x)
+					html.push("_")
+					html.push(y)	
+					html.push("\">")
 					if(universe[y][x] != null) {
 						$.each(universe[y][x], function(i, d) {
 							if(d["type"] == "resources") {
@@ -65,7 +69,17 @@ dispatcher.register("universe", function() {
 				html.push("</tr>")
 			}
 			$("#universe").html(html.join(""))
-			$("#universe").draggable()	
+			$("#universe").draggable()
+			
+			// add the click handlers
+			for(var y = 0 ; y <= y_max ; y++) {
+				for(var x = 0 ; x <= x_max ; x++) {
+					$("#" + x + "_" + y).click(function() {
+						var xy = $(this).attr("id").split("_")
+						alert(xy[0] + ":" + xy[1])
+					})	
+				}
+			}
 		})
 
 		mq.send({ type: "universe", action: "universe" })
