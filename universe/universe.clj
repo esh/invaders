@@ -32,14 +32,15 @@
 	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
-(def *universe-ref* 
-	(ref (reduce (fn [coll val]
-			(let [x (:x val)
-			      y (:y val)
-			      old (if (contains? coll [x y]) (get coll [x y]) [])] 
-				(assoc coll [x y] (conj old val))))
-		{}
-		(into (load-table "resources") (load-table "ships")))))
+(def *universe-atom* 
+	(atom (let [universe (reduce (fn [coll val]
+					(let [x (:x val)
+			      		      y (:y val)
+			      			old (if (contains? coll [x y]) (get coll [x y]) [])] 
+						(assoc coll [x y] (conj old val))))
+				     {}
+				     (into (load-table "resources") (load-table "ships")))]
+		(zipmap (keys universe) (map ref (vals universe))))))
 
 (defn mine-resources []
 	(filter #(not (nil? %))
@@ -49,7 +50,7 @@
 				(if (empty? owner)
 					nil
 					{(keyword (:owner owner)) resources})))	
-		     (vals @*universe-ref*))))
+		     (vals @*universe-atom*))))
 
 
 (defmulti dispatch #(keyword (:action %)))
@@ -64,9 +65,11 @@
 
 (defmethod dispatch :universe [msg]
 	(let [user (:user msg)
-      	      universe @*universe-ref*]
-		(assoc universe :type "universe")))
-
+      	      universe @*universe-atom*]
+		(assoc (zipmap
+				(keys universe)
+				(map deref (vals universe)))
+			:type "universe")))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
