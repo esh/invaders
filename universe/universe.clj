@@ -41,6 +41,17 @@
 		{}
 		(into (load-table "resources") (load-table "ships")))))
 
+(defn mine-resources []
+	(filter #(not (nil? %))
+		(map (fn [sector] 
+			(let [resources (filter #(= (:type %) "resources") sector)
+			      owner (first (filter #(= (:type %) "ships") sector))]
+				(if (empty? owner)
+					nil
+					{(keyword (:owner owner)) resources})))	
+		     (vals @*universe-ref*))))
+
+
 (defmulti dispatch #(keyword (:action %)))
 
 (defmethod dispatch :possessions [msg]
