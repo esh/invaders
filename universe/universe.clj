@@ -56,20 +56,20 @@
 (defmulti dispatch #(keyword (:action %)))
 
 (defmethod dispatch :possessions [msg]
-	(let [user (:user msg)
+	(dosync (let [user (:user msg)
 	      possessions ((keyword user) @*possessions-atom*)]
 		(assoc (zipmap
 				(keys possessions)
 				(map deref (vals possessions)))
-			:type "possessions")))
+			:type "possessions"))))
 
 (defmethod dispatch :universe [msg]
-	(let [user (:user msg)
+	(dosync (let [user (:user msg)
       	      universe @*universe-atom*]
 		(assoc (zipmap
 				(keys universe)
 				(map deref (vals universe)))
-			:type "universe")))
+			:type "universe"))))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
