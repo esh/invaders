@@ -40,14 +40,16 @@
 		(zipmap (keys universe) (map ref (vals universe))))))
 
 (defn mine-resources []
-	(filter #(not (nil? %))
-		(map (fn [sector] 
-			(let [resources (filter #(= (:type %) "resources") sector)
-			      owner (first (filter #(= (:type %) "ships") sector))]
-				(if (empty? owner)
-					nil
-					{(keyword (:owner owner)) resources})))	
-		     (vals @*universe-atom*))))
+	(doseq [i (filter #(not (nil? %))
+			(map (fn [sector] 
+				(let [resources (filter #(= (:type %) "resources") sector)
+			      	      owner (first (filter #(= (:type %) "ships") sector))]
+					(if (empty? owner)
+						nil
+						{(keyword (:owner owner)) resources})))	
+		     	     (map deref (vals @*universe-atom*))))]
+		(let [user (first (keys i)) resources (first (vals i))] 
+			(dosync (println user resources)))))
 
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]
