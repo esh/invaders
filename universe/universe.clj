@@ -59,16 +59,16 @@
 				(map deref (vals universe)))
 			:type "universe"))))
 
-(defmulti dispatch #(keyword (:action %)))
-
-(defmethod dispatch :possessions [msg]
-	(dosync (let [user (:user msg)
-	      possessions ((keyword user) @*possessions-atom*)]
-		(assoc (zipmap
+(defn get-possessions [user]
+	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
+	      		(assoc (zipmap
 				(keys possessions)
 				(map deref (vals possessions)))
 			:type "possessions"))))
 
+
+(defmulti dispatch #(keyword (:action %)))
+(defmethod dispatch :possessions [msg] (get-possessions (:user msg)))
 (defmethod dispatch :universe [msg] (get-universe))
 
 ;listen to universe
