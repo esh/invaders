@@ -17,13 +17,13 @@
 (def *ship-types* (with-connection *db* (with-query-results results ["select * from ship_types"]
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
-(def *possessions-ref*  
-	(ref (with-connection *db* 
+(def *possessions-atom*  
+	(atom (with-connection *db* 
 		(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 			(reduce (fn [coll val]
 				(let [user (keyword (:owner val))
 				      item (keyword (:item val))
-				      qty (:qty val)
+				      qty (ref (:qty val))
 				      old (if (contains? coll user) (user coll) {})]
 					(assoc coll user (assoc old item qty))))
 		{} results))))) 
@@ -56,8 +56,11 @@
 
 (defmethod dispatch :possessions [msg]
 	(let [user (:user msg)
-	      possessions ((keyword user) @*possessions-ref*)]
-		(assoc possessions :type "possessions")))
+	      possessions ((keyword user) @*possessions-atom*)]
+		(assoc (zipmap
+				(keys possessions)
+				(map deref (vals possessions)))
+			:type "possessions")))
 
 (defmethod dispatch :universe [msg]
 	(let [user (:user msg)
