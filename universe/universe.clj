@@ -8,7 +8,12 @@
 	   :subprotocol "sqlite"
 	   :subname "../db/universe.db"})
 
-;(def *users* (with-connection *universe-db* (with-query-results results ["select name from users"]
+(def *user-db* {:classname "org.sqlite.JDBC"
+	:subprotocol "sqlite"
+	:subname "../db/clients.db"})
+
+(def *users* (with-connection *user-db* (with-query-results results ["select user from clients"]
+	(reduce (fn [items row] (conj items (keyword (:user row)))) [] results)))) 
 
 (def *items* (with-connection *universe-db* (with-query-results results ["select name from items"]
 	(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
@@ -42,7 +47,8 @@
 		(zipmap (keys universe) (map ref (vals universe))))))
 
 (defn mine-resources []
-	(doseq [i (filter #(not (nil? %))
+	(let [deltas (filter
+			#(not (nil? %))
 			(map (fn [sector] 
 				(let [resources (filter #(= (:type %) "resources") sector)
 			      	      owner (first (filter #(= (:type %) "ships") sector))]
@@ -50,8 +56,9 @@
 						nil
 						{(keyword (:owner owner)) resources})))	
 		     	     (map deref (vals @*universe-atom*))))]
-		(let [user (first (keys i)) resources (first (vals i))] 
-			(dosync (println user resources)))))
+		(doseq [i deltas]
+			(let [user (first (keys i)) resources (first (vals i))] 
+				(dosync (println user resources))))))
 
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]
