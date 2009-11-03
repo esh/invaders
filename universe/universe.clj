@@ -52,6 +52,12 @@
 					{(keyword (:owner owner)) resources})))	
 		     (vals @*universe-atom*))))
 
+(defn get-universe []
+	(dosync (let [universe @*universe-atom*]
+      	      		(assoc (zipmap
+				(keys universe)
+				(map deref (vals universe)))
+			:type "universe"))))
 
 (defmulti dispatch #(keyword (:action %)))
 
@@ -63,13 +69,7 @@
 				(map deref (vals possessions)))
 			:type "possessions"))))
 
-(defmethod dispatch :universe [msg]
-	(dosync (let [user (:user msg)
-      	      universe @*universe-atom*]
-		(assoc (zipmap
-				(keys universe)
-				(map deref (vals universe)))
-			:type "universe"))))
+(defmethod dispatch :universe [msg] (get-universe))
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
