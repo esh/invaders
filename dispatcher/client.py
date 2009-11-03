@@ -5,7 +5,7 @@ import time
 import simplejson as json
 import sqlite3
 
-login_db = sqlite3.connect("clients.db")
+login_db = sqlite3.connect("../db/clients.db")
 _client_queues = {}
 
 class ClientMessageQueue(object):

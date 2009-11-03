@@ -4,18 +4,20 @@
 
 (. Class (forName "org.sqlite.JDBC"))
 
-(def *db* {:classname "org.sqlite.JDBC"
+(def *universe-db* {:classname "org.sqlite.JDBC"
 	   :subprotocol "sqlite"
-	   :subname "universe.db"})
+	   :subname "../db/universe.db"})
 
-(def *items* (with-connection *db* (with-query-results results ["select name from items"]
+;(def *users* (with-connection *universe-db* (with-query-results results ["select name from users"]
+
+(def *items* (with-connection *universe-db* (with-query-results results ["select name from items"]
 	(reduce (fn [items row] (assoc items (keyword (:name row)) 0)) {} results))))
 
-(def *ship-types* (with-connection *db* (with-query-results results ["select * from ship_types"]
+(def *ship-types* (with-connection *universe-db* (with-query-results results ["select * from ship_types"]
 	(reduce (fn [ships row] (assoc ships (keyword (:name row)) row)) {} results))))
 
 (def *possessions-atom*  
-	(atom (with-connection *db* 
+	(atom (with-connection *universe-db* 
 		(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 			(reduce (fn [coll val]
 				(let [user (keyword (:owner val))
@@ -26,7 +28,7 @@
 		{} results))))) 
 				
 (defn load-table [table-name]
-	(with-connection *db* (with-query-results results [(str "select * from " table-name)] 
+	(with-connection *universe-db* (with-query-results results [(str "select * from " table-name)] 
 		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
 (def *universe-atom* 
