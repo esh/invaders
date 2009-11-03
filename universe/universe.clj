@@ -67,9 +67,11 @@
 						nil
 						{(keyword (:owner owner)) resources})))	
 		     	     (map deref (vals @*universe-atom*))))]
-		(doseq [i deltas]
-			(let [user (first (keys i)) resources (first (vals i))] 
-				(dosync (println user resources))))))
+		(doseq [d deltas]
+			(let [user (keyword (first (keys d)))
+			      resources (first (vals d))]
+				(doseq [res resources] 
+					(dosync (update-possessions user (keyword (:item res)) (:yield res))))))))
 
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]
