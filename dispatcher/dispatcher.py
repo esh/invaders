@@ -35,5 +35,10 @@ def dispatch(env, start_response):
 	else:
 		return ["401"]
 
+# initialize clients
+client.init()
+
 # Start the server
 wsgi.server(api.tcp_listener(('0.0.0.0', 8080)), dispatch)
+
+

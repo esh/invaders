@@ -44,7 +44,17 @@ class ClientMessageQueue(object):
 		self.__chan.queue_delete(self.__queue, True)
 		self.__chan.close()
 		self.__conn.close()	
-	
+
+def init():
+	cur = login_db.execute("select * from clients")
+	for row in cur:
+		if row[3] == "online":
+			client = "/comet/client/" + row[1] 
+			_client_queues[client] = ClientMessageQueue(row[0])
+			_client_queues[client].last = row[2] 
+
+	api.spawn(_check_timeout)
+
 def login(msg):
         # authenticate
 	cur = login_db.execute("select * from clients where user=?", (msg["user"],))
@@ -82,19 +92,15 @@ def resolve(uid):
 		return _client_queues[client].user
 
 def _check_timeout():
-	now = time.time()
-	for client in _client_queues:
-		# if longer then 10 minutes
-		if now - _client_queues[client].last > 1000 * 60 * 10:
-			# once this is distributed, need to check db to see if we should disconnect client
-			login_db.execute("update clients set status='offline', last=? where user=?", (time.time(), _client_queues[client].user))
-			login_db.commit()
+	while True:
+		now = time.time()
+		for client in _client_queues.keys():
+			if now - _client_queues[client].last > 60 * 8:
+				login_db.execute("update clients set status='offline', last=? where user=?", (time.time(), _client_queues[client].user))
+				login_db.commit()
 
-			del _client_queues[client]
-		else:
-			login_db.execute("update clients set last=? where user=?", (time.time(), _client_queues[client].user))
-			login_db.commit()
-
-	api.call_after(60, _check_timeout)
-
-_check_timeout()
+				del _client_queues[client]
+			else:
+				login_db.execute("update clients set last=? where user=?", (_client_queues[client].last, _client_queues[client].user))
+				login_db.commit()
+		api.sleep(5)
