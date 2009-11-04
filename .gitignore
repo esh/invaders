@@ -1,6 +1,5 @@
-.gitignore
 *.pyc
 *.swp
-dispatcher/clients.db
-universe/universe.db
+db/clients.db
+db/universe.db
 dispatcher/www/nginx-default
