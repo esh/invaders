@@ -1,8 +1,11 @@
 (ns universe
 	(:use [clojure.contrib.sql :only (with-connection with-query-results)])
+	(:use [clojure.contrib.json.write])
 	(:require [amqp]))
 
 (. Class (forName "org.sqlite.JDBC"))
+
+(def *mq-chan* (amqp/create-channel (amqp/connect "localhost" 5672 "guest" "guest" "/") "ex" "topic"))
 
 (def *universe-db* {:classname "org.sqlite.JDBC"
 	   :subprotocol "sqlite"
@@ -72,6 +75,14 @@
 			      resources (first (vals d))]
 				(doseq [res resources] 
 					(dosync (update-possessions user (keyword (:item res)) (:yield res))))))))
+
+(defn get-online-users []
+	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
+		(reduce (fn [items row] (conj items (:user row))) [] results)))) 
+
+(defn broadcast-possessions []
+	(doseq [user (get-online-users)] 
+		(amqp/publish *mq-chan* "ex" (str "client." user) (json-str (get-possessions user)))))
 
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]

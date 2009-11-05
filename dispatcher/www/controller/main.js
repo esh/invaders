@@ -16,9 +16,11 @@ dispatcher.register("main", function() {
 		}) 
 
 		mq.subscribe("possessions", function(data) {
+			var html = new Array()
 			for(var key in data) {
-				if(key != "type") $("#status").append(key + ": " + data[key] + "&nbsp;")
+				if(key != "type") html.push(key + ": " + data[key] + "&nbsp;")
 			}
+			$("#status").html(html.join(""))
 		})
 
 		mq.send({ type: "universe", action: "possessions" })
