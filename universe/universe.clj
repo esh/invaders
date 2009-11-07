@@ -1,11 +1,11 @@
 (ns universe
-	(:use [clojure.contrib.sql :only (with-connection with-query-results)])
-	(:use [clojure.contrib.json.write])
-	(:require [amqp]))
+	(:use [clojure.contrib.sql :only (with-connection with-query-results)]))
 
 (. Class (forName "org.sqlite.JDBC"))
 
-(def *mq-chan* (amqp/create-channel (amqp/connect "localhost" 5672 "guest" "guest" "/") "ex" "topic"))
+(defn load-table [db table-name]
+	(with-connection db (with-query-results results [(str "select * from " table-name)] 
+		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
 
 (def *universe-db* {:classname "org.sqlite.JDBC"
 	   :subprotocol "sqlite"
@@ -33,23 +33,6 @@
 					*items*
 					(map ref (replicate (count *items*) 0))))))))
 
-(defn update-possessions [user type n]
-	(dosync (let [val (type (user @*possessions-atom*))]
-		(commute val + n)))) 
-
-;load the universe db into memory
-(with-connection *universe-db* 
-	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
-		(doseq [r results]
-			(let [user (keyword (:owner r))
-			      type (keyword (:item r))
-			      n (:qty r)]
-				(update-possessions user type n)))))
-	
-(defn load-table [table-name]
-	(with-connection *universe-db* (with-query-results results [(str "select * from " table-name)] 
-		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
-
 (def *universe-atom* 
 	(atom (let [universe (reduce (fn [coll val]
 					(let [x (:x val)
@@ -57,8 +40,30 @@
 			      			old (if (contains? coll [x y]) (get coll [x y]) [])] 
 						(assoc coll [x y] (conj old val))))
 				     {}
-				     (into (load-table "resources") (load-table "ships")))]
+				     (into (load-table *universe-db* "resources") (load-table *universe-db* "ships")))]
 		(zipmap (keys universe) (map ref (vals universe))))))
+
+(defn update-possessions [user type n]
+	(dosync (let [val (type (user @*possessions-atom*))]
+		(commute val + n)))) 
+
+(defn get-online-users []
+	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
+		(reduce (fn [items row] (conj items (:user row))) [] results)))) 
+
+(defn get-universe []
+	(dosync (let [universe @*universe-atom*]
+      	      		(assoc (zipmap
+				(keys universe)
+				(map deref (vals universe)))
+			:type "universe"))))
+
+(defn get-possessions [user]
+	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
+	      		(assoc (zipmap
+				(keys possessions)
+				(map deref (vals possessions)))
+			:type "possessions"))))
 
 (defn mine-resources []
 	(let [deltas (filter
@@ -76,24 +81,10 @@
 				(doseq [res resources] 
 					(dosync (update-possessions user (keyword (:item res)) (:yield res))))))))
 
-(defn get-online-users []
-	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
-		(reduce (fn [items row] (conj items (:user row))) [] results)))) 
-
-(defn broadcast-possessions []
-	(doseq [user (get-online-users)] 
-		(amqp/publish *mq-chan* "ex" (str "client." user) (json-str (get-possessions user)))))
-
-(defn get-universe []
-	(dosync (let [universe @*universe-atom*]
-      	      		(assoc (zipmap
-				(keys universe)
-				(map deref (vals universe)))
-			:type "universe"))))
-
-(defn get-possessions [user]
-	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
-	      		(assoc (zipmap
-				(keys possessions)
-				(map deref (vals possessions)))
-			:type "possessions"))))
+(with-connection *universe-db* 
+	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
+		(doseq [r results]
+			(let [user (keyword (:owner r))
+			      type (keyword (:item r))
+			      n (:qty r)]
+				(update-possessions user type n)))))
