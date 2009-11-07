@@ -62,12 +62,10 @@
 			:type "possessions"))))
 
 (defn update-possessions [user type n]
-	(do
-		(dosync (let [val (type (user @*possessions-atom*))]
-			(commute val + n)))
-		))
+	(dosync (let [val (type (user @*possessions-atom*))]
+			(commute val + n))))
 
-(defn mine [] 
+(defn mine-resources [] 
 	(let [deltas (reduce
 			into
 			(map 
@@ -84,38 +82,12 @@
 			      yield (:yield d)] 
 				(update-possessions owner item yield)))
 		(with-connection *universe-db*
-			(doseq [d deltas]
+			(transaction (doseq [d deltas]
 				(let [owner (:owner d)
 				      item (:item d)
 				      yield (:yield d)
 				      timestamp (. System currentTimeMillis)]
-					(insert-rows "possessions" [owner item yield timestamp]))))))
-
-
-(defn mine-resources []
-	(let [deltas (filter
-			#(not (nil? %))
-			(map
-				(fn [sector] 
-					(let [resources (filter #(= (:type %) "resources") sector)
-			      	      	      owner (first (filter #(= (:type %) "ships") sector))]
-						(if (empty? owner)
-							nil
-							{(keyword (:owner owner)) resources})))	
-				(map deref (vals @*universe-atom*))))]
-		(doseq [d deltas]
-			(let [user (first (keys d))
-			      resources (first (vals d))]
-				(doseq [res resources] 
-					(let [item (:item res)
-					      yield (:yield res)
-					      timestamp (. System currentTimeMillis)]
-						(do
-							(update-possessions (keyword user) (keyword item) yield)
-							(with-connection *universe-db*
-								(insert-rows 
-									"possessions"
-									[(. (str user) substring 1) item yield timestamp])))))))))
+					(insert-rows "possessions" [owner item yield timestamp])))))))
 
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
