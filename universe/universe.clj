@@ -67,16 +67,42 @@
 			(commute val + n)))
 		))
 
+(defn mine [] 
+	(let [deltas (reduce
+			into
+			(map 
+				(fn [sector] 
+					(let [resources (filter #(= (:type %) "resources") sector)
+					      owner (first (filter #(= (:type %) "ships") sector))]
+						(if (empty? owner)
+							`()
+							(map #(assoc % :owner (:owner owner)) resources))))
+				(dosync (map deref (vals @*universe-atom*)))))]
+		(doseq [d deltas]
+			(let [owner (keyword (:owner d))
+                              item (keyword (:item d))
+			      yield (:yield d)] 
+				(update-possessions owner item yield)))
+		(with-connection *universe-db*
+			(doseq [d deltas]
+				(let [owner (:owner d)
+				      item (:item d)
+				      yield (:yield d)
+				      timestamp (. System currentTimeMillis)]
+					(insert-rows "possessions" [owner item yield timestamp]))))))
+
+
 (defn mine-resources []
 	(let [deltas (filter
 			#(not (nil? %))
-			(map (fn [sector] 
-				(let [resources (filter #(= (:type %) "resources") sector)
-			      	      owner (first (filter #(= (:type %) "ships") sector))]
-					(if (empty? owner)
-						nil
-						{(keyword (:owner owner)) resources})))	
-		     	     (map deref (vals @*universe-atom*))))]
+			(map
+				(fn [sector] 
+					(let [resources (filter #(= (:type %) "resources") sector)
+			      	      	      owner (first (filter #(= (:type %) "ships") sector))]
+						(if (empty? owner)
+							nil
+							{(keyword (:owner owner)) resources})))	
+				(map deref (vals @*universe-atom*))))]
 		(doseq [d deltas]
 			(let [user (first (keys d))
 			      resources (first (vals d))]
