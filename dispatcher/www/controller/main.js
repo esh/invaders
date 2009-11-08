@@ -5,20 +5,22 @@ dispatcher.register("main", function() {
 			if(e.keyCode==13) {
 				mq.send({
 					type: "chat",
-					text: $("#chat input").val()
+					payload: {
+						text: $("#chat input").val()
+					}
 				})
 				$("#chat input").val("")
 			} 
 		})
-		mq.subscribe("chat", function(data) {
-			$("#chat div").append("<br/>" + data["user"] + "> " + data["text"])
+		mq.subscribe("chat", function(payload) {
+			$("#chat div").append("<br/>" + payload.user + "> " + payload.text)
 			$("#chat div").scrollTo("max")
 		}) 
 
-		mq.subscribe("possessions", function(data) {
+		mq.subscribe("possessions", function(payload) {
 			var html = new Array()
-			for(var key in data) {
-				if(key != "type") html.push(key + ": " + data[key] + "&nbsp;")
+			for(var key in payload) {
+				html.push(key + ": " + payload[key] + "&nbsp;")
 			}
 			$("#status").html(html.join(""))
 		})

@@ -49,17 +49,17 @@
  
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]
-      	      		(assoc (zipmap
-				(keys universe)
-				(map deref (vals universe)))
-			:type "universe"))))
+			{:type "universe"
+      	      		 :payload (zipmap
+					(keys universe)
+					(map deref (vals universe)))})))
 
 (defn get-possessions [user]
 	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
-	      		(assoc (zipmap
-				(keys possessions)
-				(map deref (vals possessions)))
-			:type "possessions"))))
+	      		{:type "possessions"
+			 :payload (zipmap
+					(keys possessions)
+					(map deref (vals possessions)))})))
 
 (defn update-possessions [user type n]
 	(dosync (let [val (type (user @*possessions-atom*))]

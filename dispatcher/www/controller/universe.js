@@ -46,12 +46,11 @@ dispatcher.register("universe", function() {
 			dispatcher.run("ark_ship")
 		})
 
-		mq.subscribe("universe", function(data) {
-			delete data["type"]
+		mq.subscribe("universe", function(payload) {
 			// find highest row/col
 			var x_max = 0
 			var y_max = 0
-			for(var key in data) {
+			for(var key in payload) {
 				key = extract_key(key)
 				if(key.x > x_max) x_max = key.x
 				if(key.y > y_max) y_max = key.y
@@ -63,9 +62,9 @@ dispatcher.register("universe", function() {
 			}
 
 			// populate the grid
-			for(var key in data) {
+			for(var key in payload) {
 				var t = extract_key(key)
-				universe[t.y][t.x] = data[key]
+				universe[t.y][t.x] = payload[key]
 			}
 			
 			var html = new Array()
@@ -97,8 +96,8 @@ dispatcher.register("universe", function() {
 			}
 
 			// find your ark ship
-			for(var key in data) {
-				$.each(data[key], function(i,d) {
+			for(var key in payload) {
+				$.each(payload[key], function(i,d) {
 					if(d.type == "ships" && d.ship_type == "ark ship" && session.user == d.owner) {
 						var pos = extract_key(key)
 						state.x = pos.x

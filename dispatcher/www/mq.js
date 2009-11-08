@@ -19,7 +19,7 @@ var mq = (function() {
 							$.each(data, function(i, d) {
 								var fn = subscriptions[d.type]
 								if(fn != undefined && fn != null) {
-									fn(d)
+									fn(d.payload)
 								}
 							})
 						} catch(ex) {
