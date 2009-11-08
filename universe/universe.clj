@@ -13,7 +13,9 @@
 
 (defn table-to-map [db table-name]
 	(with-connection db (with-query-results results [(str "select * from " table-name)] 
-		(reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results))))
+		(let [vals (reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results)
+		      keys (map (fn [r] [(:x r) (:y r)]) vals)]
+			(zipmap keys vals)))))
 
 (def *users* (with-connection *user-db* (with-query-results results ["select user from clients"]
 	(reduce (fn [items row] (conj items (keyword (:user row)))) [] results)))) 
@@ -33,15 +35,9 @@
 					*items*
 					(map ref (replicate (count *items*) 0))))))))
 
-(def *universe-atom* 
-	(atom (let [universe (reduce (fn [coll val]
-					(let [x (:x val)
-			      		      y (:y val)
-			      			old (if (contains? coll [x y]) (get coll [x y]) [])] 
-						(assoc coll [x y] (conj old val))))
-				     {}
-				     (into (table-to-map *universe-db* "resources") (table-to-map *universe-db* "ships")))]
-		(zipmap (keys universe) (map ref (vals universe))))))
+(def *ships-ref* (ref (table-to-map *universe-db* "ships")))
+
+(def *resources-ref* (ref (table-to-map *universe-db* "resources")))
 
 (defn get-online-users []
 	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
@@ -49,33 +45,29 @@
  
 (defn get-universe []
 	(dosync (let [universe @*universe-atom*]
-			{:type "universe"
-      	      		 :payload (zipmap
-					(keys universe)
-					(map deref (vals universe)))})))
+			(merge-with
+				(fn [a b]
+					(let [a (if (list? a) a [a])
+					      b (if (list? b) b [b])]
+						(into a b))) 
+					@*resources-ref* @*ships-ref*))))
 
 (defn get-possessions [user]
 	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
-	      		{:type "possessions"
-			 :payload (zipmap
-					(keys possessions)
-					(map deref (vals possessions)))})))
+			(zipmap
+				(keys possessions)
+				(map deref (vals possessions))))))
 
 (defn update-possessions [user type n]
 	(dosync (let [val (type (user @*possessions-atom*))]
 			(commute val + n))))
 
 (defn mine-resources [] 
-	(let [deltas (reduce
-			into
-			(map 
-				(fn [sector] 
-					(let [resources (filter #(= (:type %) "resources") sector)
-					      owner (first (filter #(= (:type %) "ships") sector))]
-						(if (empty? owner)
-							`()
-							(map #(assoc % :owner (:owner owner)) resources))))
-				(dosync (map deref (vals @*universe-atom*)))))]
+	(let [deltas (filter
+			#(and (contains? % :owner) (contains? % :item))
+			(vals (merge-with
+				(fn [a b] {:owner (:owner b) :item (:item a) :yield (:yield a)})
+				@*resources-ref* @*ships-ref*)))] 
 		(doseq [d deltas]
 			(let [owner (keyword (:owner d))
                               item (keyword (:item d))

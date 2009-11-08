@@ -5,8 +5,8 @@
 	(:require [amqp]))
 
 (defmulti dispatch #(keyword (:action %)))
-(defmethod dispatch :possessions [msg] (universe/get-possessions (:user msg)))
-(defmethod dispatch :universe [msg] (universe/get-universe))
+(defmethod dispatch :possessions [msg] {:type "possessions" :playload (universe/get-possessions (:user msg))})
+(defmethod dispatch :universe [msg] {:type "universe" :payload (universe/get-universe)})
 
 ;listen to universe
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")
