@@ -13,9 +13,10 @@
 
 (defn table-to-map [db table-name]
 	(with-connection db (with-query-results results [(str "select * from " table-name)] 
-		(let [vals (map (fn [r] (assoc r :type table-name)) results)
-		      keys (map (fn [r] [(:x r) (:y r)]) vals)]
-			(zipmap keys vals)))))
+		(let [v (map (fn [r] (assoc r :type table-name)) results)
+		      k (map (fn [r] [(:x r) (:y r)]) v)
+		      v (map (fn [r] (zipmap (rest (rest (keys r))) (rest (rest (vals r))))) v)]
+			(zipmap k v)))))
 
 (def *users* (with-connection *user-db* (with-query-results results ["select user from clients"]
 	(reduce (fn [items row] (conj items (keyword (:user row)))) [] results)))) 
