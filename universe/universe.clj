@@ -13,7 +13,7 @@
 
 (defn table-to-map [db table-name]
 	(with-connection db (with-query-results results [(str "select * from " table-name)] 
-		(let [vals (reduce (fn [coll val] (conj coll (assoc val :type table-name))) [] results)
+		(let [vals (map (fn [r] (assoc r :type table-name)) results)
 		      keys (map (fn [r] [(:x r) (:y r)]) vals)]
 			(zipmap keys vals)))))
 
