@@ -44,13 +44,12 @@
 		(reduce (fn [items row] (conj items (:user row))) [] results)))) 
  
 (defn get-universe []
-	(dosync (let [universe @*universe-atom*]
-			(merge-with
-				(fn [a b]
-					(let [a (if (list? a) a [a])
-					      b (if (list? b) b [b])]
-						(into a b))) 
-					@*resources-ref* @*ships-ref*))))
+	(dosync (merge-with
+			(fn [a b]
+				(let [a (if (list? a) a [a])
+				      b (if (list? b) b [b])]
+					(into a b))) 
+					@*resources-ref* @*ships-ref*)))
 
 (defn get-possessions [user]
 	(dosync (let [possessions ((keyword user) @*possessions-atom*)]
