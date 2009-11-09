@@ -12,6 +12,6 @@
 					chan
 					"ex"
 					(str "client." user) 
-					(json-str (universe/get-possessions user))))
+					(json-str {:type "possessions" :payload (universe/get-possessions user)})))
 			(. Thread sleep 60000)	
 			(recur))))))
