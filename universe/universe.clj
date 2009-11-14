@@ -81,6 +81,12 @@
 				      timestamp (. System currentTimeMillis)]
 					(insert-rows "possessions" [owner item yield timestamp])))))))
 
+(defn move-ship [source dest]
+	(dosync (if (contains? @*ships-ref* source)
+			(let [ship (get @*ships-ref* source)]
+				(ref-set *ships-ref*
+					(assoc (dissoc @*ships-ref* source) dest ship))))))
+
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 		(doseq [r results]
