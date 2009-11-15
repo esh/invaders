@@ -59,27 +59,22 @@
 				(map deref (vals possessions))))))
 
 (defn update-possessions [user type n]
-	(dosync (let [val (type (user @*possessions-atom*))]
+	(dosync (let [user (keyword user)
+		      type (keyword type)
+		      val (type (user @*possessions-atom*))]
 			(commute val + n))))
 
-(defn mine-resources [] 
-	(let [deltas (filter
-			#(and (contains? % :owner) (contains? % :item))
-			(vals (merge-with
-				(fn [a b] {:owner (:owner b) :item (:item a) :yield (:yield a)})
-				@*resources-ref* @*ships-ref*)))] 
-		(doseq [d deltas]
-			(let [owner (keyword (:owner d))
-                              item (keyword (:item d))
-			      yield (:yield d)] 
-				(update-possessions owner item yield)))
-		(with-connection *universe-db*
-			(transaction (doseq [d deltas]
-				(let [owner (:owner d)
-				      item (:item d)
-				      yield (:yield d)
+(defn step-ship [pos] 
+	(dosync (let [ship (get @*ships-ref* pos)
+		      res (get @*resources-ref* pos)]
+			(if (not (nil? res))
+				(let [owner (:owner ship)
+				      item (:item res)
+		      		      yield (:yield res)
 				      timestamp (. System currentTimeMillis)]
-					(insert-rows "possessions" [owner item yield timestamp])))))))
+					(update-possessions owner item yield)		
+					(with-connection *universe-db*
+						(insert-rows "possessions" [owner item yield timestamp])))))))
 
 (defn move-ship [source dest]
 	(dosync (if (contains? @*ships-ref* source)
