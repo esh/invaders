@@ -52,22 +52,20 @@
 				(map deref (vals possessions))))))
 
 (defn update-possessions [user type n]
-	;(with-connection *universe-db*
-;		(transaction (insert-rows "possessions" [user type n (. System currentTimeMillis)])))
 	(dosync (let [user (keyword user)
 		      type (keyword type)
 		      val (type (user @*possessions-atom*))]
 			(commute val + n))))
 
 (defn ship-fn [ship-ref]
-	(dosync (let [ship @ship-ref
-		      resources (get @*resources-atom* [(:x ship) (:y ship)])]
-       			(if (not (nil? resources))
-				(doseq [res resources]
-					(let [owner (:owner ship)
-					      item (:item res)
-					      yield (:yield res)]
-						(update-possessions owner item yield)))))))
+	(with-connection *universe-db* (transaction
+		(doseq [res (dosync (let [ship @ship-ref
+					  resources (get @*resources-atom* [(:x ship) (:y ship)])]
+					(if (not (nil? resources))
+						(map (fn [res] [(:owner ship) (:item res) (:yield res)]) resources)
+						[])))]
+			(apply update-possessions res)
+			(insert-rows "possessions" (conj res (. System currentTimeMillis)))))))
 
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
