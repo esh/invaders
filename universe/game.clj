@@ -5,7 +5,6 @@
 	(:use [clojure.contrib.json.write])
 	(:use [clojure.walk]))
 
-
 (defmulti dispatch #(keyword (:action %)))
 (defmethod dispatch :possessions [msg] {:type "possessions" :payload (universe/get-possessions (:user msg))})
 (defmethod dispatch :universe [msg] {:type "universe" :payload (universe/get-universe)})
@@ -24,7 +23,7 @@
 									chan
 									"ex"
 									(str "client." (:owner @ship-ref)) 
-									(json-str {:type "possessions" :payload res)})))))
+									(json-str {:type "possessions" :payload res}))))))
 				(. Thread sleep 60000)	
 				(recur))))))
 
