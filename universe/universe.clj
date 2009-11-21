@@ -11,20 +11,18 @@
 	:subprotocol "sqlite"
 	:subname "../db/clients.db"})
 
-(def *users* (with-connection *user-db* (with-query-results results ["select user from clients"]
-	(reduce (fn [items row] (conj items (keyword (:user row)))) [] results)))) 
-
-(def *items* (with-connection *universe-db* (with-query-results results ["select name from items"]
-	(reduce (fn [items row] (conj items (keyword (:name row)))) [] results))))
-
 (def *possessions-atom*
-	(atom (zipmap
-		*users*
-		(take
-			(count *users*)
-			(repeatedly #(zipmap
-					*items*
-					(map ref (replicate (count *items*) 0))))))))
+	(let [users (with-connection *user-db* (with-query-results results ["select user from clients"] 
+			(doall (map #(keyword (:user %)) results))))
+	      items (with-connection *universe-db* (with-query-results results ["select name from items"] 
+			(doall (map #(keyword (:name %)) results))))]
+		(atom (zipmap
+				users
+				(take
+					(count users)
+					(repeatedly #(zipmap
+						items
+						(map ref (replicate (count items) 0)))))))))
 
 (def *ships-atom*
 	(atom (with-connection *universe-db* (with-query-results results ["select * from ships"]
@@ -36,7 +34,7 @@
  
 (defn get-online-users []
 	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
-		(reduce (fn [items row] (conj items (:user row))) [] results)))) 
+		(apply hash-set (map #(:user %) results))))) 
  
 (defn get-universe []
 	(dosync 
@@ -57,7 +55,7 @@
 		      val (type (user @*possessions-atom*))]
 			(commute val + n))))
 
-(defn ship-fn [ship-ref]
+(defn ship-step [ship-ref]
 	(with-connection *universe-db* (transaction
 		(doseq [res (dosync (let [ship @ship-ref
 					  resources (get @*resources-atom* [(:x ship) (:y ship)])]
@@ -65,7 +63,8 @@
 						(map (fn [res] [(:owner ship) (:item res) (:yield res)]) resources)
 						[])))]
 			(apply update-possessions res)
-			(insert-rows "possessions" (conj res (. System currentTimeMillis)))))))
+			(insert-rows "possessions" (conj res (. System currentTimeMillis))))))
+	(get-possessions (:owner @ship-ref)))
 
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
