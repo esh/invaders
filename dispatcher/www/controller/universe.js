@@ -35,15 +35,39 @@ dispatcher.register("universe", function() {
 		function select(x,y) {
 			$("#sector h2").html("Sector " + x + ":" + y) 
 			$("#sector div").html(universe_contents(universe[y][x]))
+
+			if(state.x != undefined && state.y != undefined) {
+				$("#" + state.x + "_" + state.y).css("background-color", "black")
+			}
+
+			$("#" + x + "_" + y).css("background-color", "red")
+
+			var sector = universe[y][x]
+			if(sector != undefined) {
+				var ship = sector.filter(function(s) {
+					return s.type == "ships" && s.owner == "esh"
+				})
+				if(ship.length > 0) {
+					ship = ship[0]
+				
+					$("#ship h2").html(ship.ship_type)
+					$("#ship div").html("shields: " + ship.shields)	
+				} else {
+					$("#ship h2").html("")
+					$("#ship div").html("")
+				}
+			} else {
+				$("#ship h2").html("")
+				$("#ship div").html("")
+			}
+			
+			state.x = x
+			state.y = y
 		}
 		
 		$("#market").click(function() {
 			mq.unsubscribe("universe")
 			dispatcher.run("market")
-		})
-		$("#ark_ship").click(function() {
-			mq.unsubscribe("universe")
-			dispatcher.run("ark_ship")
 		})
 
 		mq.subscribe("universe", function(payload) {
@@ -89,24 +113,14 @@ dispatcher.register("universe", function() {
 				for(var x = 0 ; x <= x_max ; x++) {
 					$("#" + x + "_" + y).click(function() {
 						var xy = $(this).attr("id").split("_")
-						$("#sector h2").html("Sector " + xy.join(":"))
-						$("#sector div").html(universe_contents(universe[xy[1]][xy[0]]))	
+						select(xy[0], xy[1])	
 					})	
 				}
 			}
 
-			// find your ark ship
-			for(var key in payload) {
-				$.each(payload[key], function(i,d) {
-					if(d.type == "ships" && d.ship_type == "ark ship" && session.user == d.owner) {
-						var pos = extract_key(key)
-						state.x = pos.x
-						state.y = pos.y
-					}
-				})
+			if(state.x != undefined && state.y != undefined) {
+				select(state.x, state.y)
 			}
-	
-			select(state.x,state.y)
 		})
 
 		mq.send({ type: "universe", action: "universe" })

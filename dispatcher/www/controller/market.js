@@ -8,10 +8,5 @@ dispatcher.register("market", function() {
 			mq.unsubscribe("exchange")
 			dispatcher.run("universe")
 		})
-		$("#ark_ship").click(function() {
-			mq.unsubscribe("exchange")
-			dispatcher.run("ark_ship")
-		})
-
 	})
 })
