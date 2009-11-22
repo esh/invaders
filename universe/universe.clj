@@ -30,7 +30,9 @@
 
 (def *resources-atom*
 	(with-connection *universe-db* (with-query-results results ["select * from resources"] 
-		(atom (reduce (partial merge-with into) (doall (map (fn [r] {[(:x r) (:y r)] [r]}) results)))))))
+		(atom (reduce
+			(partial merge-with into)
+			(doall (map (fn [r] {[(:x r) (:y r)] [(assoc r :type "resources")]}) results)))))))
  
 (defn get-online-users []
 	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]

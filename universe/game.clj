@@ -38,3 +38,5 @@
 				      res (dispatch msg)]
 					(println res)
 					(amqp/publish chan "ex" (str "client." user) (json-str res))))))) 
+
+(println "game server started")
