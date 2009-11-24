@@ -68,6 +68,19 @@
 			(insert-rows "possessions" (conj res (. System currentTimeMillis))))))
 	(get-possessions (:owner @ship-ref)))
 
+(defn move-ship [from to]
+	(let [get (fn [x y]
+			(filter
+				(fn [s]
+					(let [s @s]
+						(and (= (:x s) x) (= (:y s) y))))
+					@*ships-atom*))
+	      ship (first (get (nth from 0) (nth from 1)))
+	      target (first (get (nth to 0) (nth to 1)))]
+		(if (and (not (nil? ship)) (nil? target))
+			(dosync
+				(ref-set ship (assoc @ship :x (nth to 0) :y (nth to 1)))))))
+
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 		(doseq [r results]
