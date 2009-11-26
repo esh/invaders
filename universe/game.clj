@@ -8,6 +8,10 @@
 (defn reply [chan user msg] 
 	(amqp/publish chan "ex" (str "client." user) (json-str msg)))
 
+(defn broadcast [chan msg]
+	(doseq [user universe/get-online-users]
+		(reply chan user msg)))		
+
 (defmulti dispatch (fn [chan user msg] (keyword (:action msg))))
 
 (defmethod dispatch :possessions [chan user msg] 
@@ -16,6 +20,11 @@
 (defmethod dispatch :universe [chan user msg]
 	(reply chan user {:type "universe" :payload (universe/get-universe)}))
 
+(defmethod dispatch :move [chan user msg]
+	(let [res (universe/move-ship (:from msg) (:to msg))
+	      uni (universe/get-universe)]
+		(if (not (nil? res))
+			(broadcast chan {:type "universe" :payload uni}))))
 
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")]
 	;game loop
