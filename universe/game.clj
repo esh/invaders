@@ -5,9 +5,17 @@
 	(:use [clojure.contrib.json.write])
 	(:use [clojure.walk]))
 
-(defmulti dispatch #(keyword (:action %)))
-(defmethod dispatch :possessions [msg] {:type "possessions" :payload (universe/get-possessions (:user msg))})
-(defmethod dispatch :universe [msg] {:type "universe" :payload (universe/get-universe)})
+(defn reply [chan user msg] 
+	(amqp/publish chan "ex" (str "client." user) (json-str msg)))
+
+(defmulti dispatch (fn [chan user msg] (keyword (:action msg))))
+
+(defmethod dispatch :possessions [chan user msg] 
+	(reply chan user {:type "possessions" :payload (universe/get-possessions user)}))
+
+(defmethod dispatch :universe [chan user msg]
+	(reply chan user {:type "universe" :payload (universe/get-universe)}))
+
 
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")]
 	;game loop
@@ -18,12 +26,8 @@
 					(doseq [ship-ref @universe/*ships-atom*]
 						(let [owner (:owner @ship-ref)
 						      res (universe/ship-step ship-ref)]
-							(if (contains? online-users owner)	
-								(amqp/publish
-									chan
-									"ex"
-									(str "client." (:owner @ship-ref)) 
-									(json-str {:type "possessions" :payload res}))))))
+							(if (contains? online-users owner)
+								(reply chan owner {:type "possessions" :payload res}))))) 	
 				(. Thread sleep 60000)	
 				(recur))))))
 
@@ -34,9 +38,7 @@
 		(amqp/subscribe chan "universe"
 			(fn [msg]
 				(let [msg (keywordize-keys (read-json-string msg))
-				      user (:user msg)
-				      res (dispatch msg)]
-					(println res)
-					(amqp/publish chan "ex" (str "client." user) (json-str res))))))) 
+				      user (:user msg)]
+					(dispatch chan user msg))))))
 
 (println "game server started")
