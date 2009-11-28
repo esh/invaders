@@ -30,7 +30,9 @@ dispatcher.register("universe", function() {
 
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
 		var universe = new Array()
-		var state = new Object()
+		var state = {
+			action: "select"
+		} 
 		
 		function select(x,y) {
 			$("#sector h2").html("Sector " + x + ":" + y) 
@@ -42,6 +44,9 @@ dispatcher.register("universe", function() {
 
 			$("#" + x + "_" + y).css("background-color", "red")
 
+			$("#ship h2").html("")
+			$("#ship div").html("")
+
 			var sector = universe[y][x]
 			if(sector != undefined) {
 				var ship = sector.filter(function(s) {
@@ -51,14 +56,17 @@ dispatcher.register("universe", function() {
 					ship = ship[0]
 				
 					$("#ship h2").html(ship.ship_type)
-					$("#ship div").html("shields: " + ship.shields)	
-				} else {
-					$("#ship h2").html("")
-					$("#ship div").html("")
+					var html = new Array()
+					html.push("shields: ")
+					html.push(ship.shields)
+					html.push("<br/>")
+					html.push("<input id=\"move\" type=\"button\" value=\"move\"/>")
+					$("#ship div").html(html.join(""))
+					$("#move").click(function() {
+						state.selected = ship
+						state.action = "move"
+					})	
 				}
-			} else {
-				$("#ship h2").html("")
-				$("#ship div").html("")
 			}
 			
 			state.x = x
