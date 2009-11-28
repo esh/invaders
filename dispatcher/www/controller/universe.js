@@ -31,7 +31,7 @@ dispatcher.register("universe", function() {
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
 		var universe = new Array()
 		var state = {
-			action: "select"
+			action: select 
 		} 
 		
 		function select(x,y) {
@@ -64,7 +64,12 @@ dispatcher.register("universe", function() {
 					$("#ship div").html(html.join(""))
 					$("#move").click(function() {
 						state.selected = ship
-						state.action = "move"
+						state.action = move
+						$(this).attr("value", "hold")
+						$(this).click(function() {
+							state.action = select 
+							$(this).attr("value", "move")	
+						})
 					})	
 				}
 			}
@@ -72,7 +77,14 @@ dispatcher.register("universe", function() {
 			state.x = x
 			state.y = y
 		}
-		
+	
+		function move(x,y) {
+			if(confirm("move to " + x + " " + y)) {
+				mq.send({ type: "universe", action: "move", from: [state.selected.x, state.selected.y], to: [x, y] })
+				state.action = select
+			}
+		}
+	
 		$("#market").click(function() {
 			mq.unsubscribe("universe")
 			dispatcher.run("market")
@@ -121,7 +133,7 @@ dispatcher.register("universe", function() {
 				for(var x = 0 ; x <= x_max ; x++) {
 					$("#" + x + "_" + y).click(function() {
 						var xy = $(this).attr("id").split("_")
-						select(xy[0], xy[1])	
+						state.action(parseInt(xy[0]), parseInt(xy[1]))
 					})	
 				}
 			}

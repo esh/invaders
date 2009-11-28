@@ -46,6 +46,7 @@
 		(amqp/bind-queue chan "universe" "ex" "universe")
 		(amqp/subscribe chan "universe"
 			(fn [msg]
+				(println msg)
 				(let [msg (keywordize-keys (read-json-string msg))
 				      user (:user msg)]
 					(dispatch chan user msg))))))
