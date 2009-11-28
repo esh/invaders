@@ -9,7 +9,7 @@
 	(amqp/publish chan "ex" (str "client." user) (json-str msg)))
 
 (defn broadcast [chan msg]
-	(doseq [user universe/get-online-users]
+	(doseq [user (seq (universe/get-online-users))]
 		(reply chan user msg)))		
 
 (defmulti dispatch (fn [chan user msg] (keyword (:action msg))))
