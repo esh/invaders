@@ -13,9 +13,9 @@
 
 (def *ship-meta*
 	(let [ship-types (with-connection *universe-db* (with-query-results results ["select * from ship_types"]
-				(apply merge (doall (map (fn [r] {(:name r) r}) results)))))
+				(apply merge (doall (map (fn [r] {(keyword (:name r)) r}) results)))))
 	      ship-costs (with-connection *universe-db* (with-query-results results ["select * from ship_costs"]
-				(apply merge-with into (doall (map (fn [r] {(:ship_type r) [{:item (:item r) :qty (:qty r)}]}) results)))))]
+				(apply merge-with into (doall (map (fn [r] {(keyword (:ship_type r)) [{:item (:item r) :qty (:qty r)}]}) results)))))]
 		(merge-with (fn [type cost] (assoc type :cost cost)) ship-types ship-costs)))
 		
 (def *possessions-atom*
@@ -73,15 +73,16 @@
 			(insert-rows "possessions" (conj res (. System currentTimeMillis))))))
 	(get-possessions (:owner @ship-ref)))
 
+(defn get-ship [x y]
+	(filter
+		(fn [s]
+			(let [s @s]
+				(and (= (:x s) x) (= (:y s) y))))
+			@*ships-atom*))
+
 (defn move-ship [user from to]
-	(let [get (fn [x y]
-			(filter
-				(fn [s]
-					(let [s @s]
-						(and (= (:x s) x) (= (:y s) y))))
-					@*ships-atom*))
-	      ship (first (get (nth from 0) (nth from 1)))
-	      target (first (get (nth to 0) (nth to 1)))]
+	(let [ship (first (get-ship (nth from 0) (nth from 1)))
+	      target (first (get-ship (nth to 0) (nth to 1)))]
 		(if (and (and (not (nil? ship)) (= user (:owner @ship))) (nil? target))
 			(let [id (:id @ship)
 			      x (nth to 0)
@@ -91,6 +92,19 @@
 				(with-connection *universe-db*
 					(update-values :ships ["id=?" id] {:x x :y y}))))))
 
+(defn create-ship [user type position]
+	(dosync
+		(let [user (keyword user)
+		      possessions (user @*possessions-atom*)
+		      cost (:cost ((keyword type) *ship-meta*))]
+			(if (and
+				(reduce `and (map
+						(fn [r] (>= @((keyword (:item r)) possessions) (:qty r)))
+						cost))
+				(empty? (get-ship (nth position 0) (nth position 1))))
+				(doseq [c cost]
+					(update-possessions user (keyword (:item c)) (- (:qty c))))))))
+				
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 		(doseq [r results]
