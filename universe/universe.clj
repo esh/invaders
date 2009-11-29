@@ -68,7 +68,7 @@
 			(insert-rows "possessions" (conj res (. System currentTimeMillis))))))
 	(get-possessions (:owner @ship-ref)))
 
-(defn move-ship [from to]
+(defn move-ship [user from to]
 	(let [get (fn [x y]
 			(filter
 				(fn [s]
@@ -77,7 +77,7 @@
 					@*ships-atom*))
 	      ship (first (get (nth from 0) (nth from 1)))
 	      target (first (get (nth to 0) (nth to 1)))]
-		(if (and (not (nil? ship)) (nil? target))
+		(if (and (and (not (nil? ship)) (= user (:owner @ship))) (nil? target))
 			(let [id (:id @ship)
 			      x (nth to 0)
 			      y (nth to 1)]

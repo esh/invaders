@@ -21,7 +21,7 @@
 	(reply chan user {:type "universe" :payload (universe/get-universe)}))
 
 (defmethod dispatch :move [chan user msg]
-	(let [res (universe/move-ship (:from msg) (:to msg))
+	(let [res (universe/move-ship user (:from msg) (:to msg))
 	      uni (universe/get-universe)]
 		(if (not (nil? res))
 			(broadcast chan {:type "universe" :payload uni}))))
