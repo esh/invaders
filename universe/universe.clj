@@ -110,7 +110,8 @@
 								      (apply update-possessions t)
 									t))
 							cost)
-					 	      ship (ref {:x x :y y :owner user :ship_type type :type "ships" :shields 1.0})]
+						      id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
+					 	      ship (ref {:id id :x x :y y :owner user :ship_type type :type "ships" :shields 1.0})]
 							(reset! *ships-atom* (conj @*ships-atom* ship))
 								{:updates updates :ship ship})))))]
 		(if (not (nil? res))
