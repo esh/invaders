@@ -106,19 +106,20 @@
 					(do
 						(let [updates (map
 							(fn [c] 
-								(let [t [(keyword user) (keyword (:item c)) (- (:qty c))]]
+								(let [t [user (:item c) (- (:qty c))]]
 								      (apply update-possessions t)
 									t))
 							cost)
 						      id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
 					 	      ship (ref {:id id :x x :y y :owner user :ship_type type :type "ships" :shields 1.0})]
 							(reset! *ships-atom* (conj @*ships-atom* ship))
-								{:updates updates :ship ship})))))]
+								{:updates updates :ship (vals (dissoc @ship :type))})))))]
 		(if (not (nil? res))
 			(do
 				(with-connection *universe-db*
 					(doseq [update (:updates res)]
-						(insert-rows "possessions" (conj update (. System currentTimeMillis)))))))))
+						(insert-rows "possessions" (conj update (. System currentTimeMillis))))
+					(insert-rows "ships" (:ship res)))))))
 				
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]

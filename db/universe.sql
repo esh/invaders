@@ -1,5 +1,9 @@
 BEGIN TRANSACTION;
 CREATE TABLE possessions (owner TEXT, item TEXT, qty INTEGER, timestamp INTEGER);
+INSERT INTO "possessions" VALUES('esh', 'titanium', 300000, 0);
+INSERT INTO "possessions" VALUES('esh', 'tungsten', 300000, 0);
+INSERT INTO "possessions" VALUES('esh', 'uranium', 300000, 0);
+INSERT INTO "possessions" VALUES('esh', 'deuterium', 300000, 0);
 CREATE TABLE items (name TEXT, description TEXT);
 INSERT INTO "items" VALUES('titanium','');
 INSERT INTO "items" VALUES('tungsten','');
