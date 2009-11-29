@@ -11,6 +11,13 @@
 	:subprotocol "sqlite"
 	:subname "../db/clients.db"})
 
+(def *ship-meta*
+	(let [ship-types (with-connection *universe-db* (with-query-results results ["select * from ship_types"]
+				(apply merge (doall (map (fn [r] {(:name r) r}) results)))))
+	      ship-costs (with-connection *universe-db* (with-query-results results ["select * from ship_costs"]
+				(apply merge-with into (doall (map (fn [r] {(:ship_type r) [{:item (:item r) :qty (:qty r)}]}) results)))))]
+		(merge-with (fn [type cost] (assoc type :cost cost)) ship-types ship-costs)))
+		
 (def *possessions-atom*
 	(let [users (with-connection *user-db* (with-query-results results ["select user from clients"] 
 			(doall (map #(keyword (:user %)) results))))
@@ -30,9 +37,7 @@
 
 (def *resources-atom*
 	(with-connection *universe-db* (with-query-results results ["select * from resources"] 
-		(atom (reduce
-			(partial merge-with into)
-			(doall (map (fn [r] {[(:x r) (:y r)] [(assoc r :type "resources")]}) results)))))))
+		(atom (apply merge-with into (doall (map (fn [r] {[(:x r) (:y r)] [(assoc r :type "resources")]}) results)))))))
  
 (defn get-online-users []
 	(with-connection *user-db* (with-query-results results ["select user from clients where status='online'"]
