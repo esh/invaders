@@ -10,7 +10,7 @@ body {
 
 #main {
 	width: 800px;
-	height: 450px;
+	height: 400px;
 	margin: 0px auto 0px auto;
 }
 
@@ -26,7 +26,7 @@ body {
 
 #chat div {
 	width: 800px;
-	height: 120px;
+	height: 110px;
 	text-align:left;
 	overflow-y: scroll;
 }
@@ -44,7 +44,7 @@ body {
 #pane {
 	float:left;
 	width: 600px;
-	height: 450px;
+	height: 400px;
 	overflow: hidden;
 }
 

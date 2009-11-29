@@ -50,7 +50,7 @@ dispatcher.register("universe", function() {
 			var sector = universe[y][x]
 			if(sector != undefined) {
 				var ship = sector.filter(function(s) {
-					return s.type == "ships" && s.owner == "esh"
+					return s.type == "ships" && s.owner == session.user 
 				})
 				if(ship.length > 0) {
 					ship = ship[0]
