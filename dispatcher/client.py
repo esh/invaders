@@ -82,6 +82,7 @@ def handle(env):
 	if env['PATH_INFO'] in _client_queues:
 		return _client_queues[env['PATH_INFO']].listen()
 	else:
+		api.sleep(1)
 		raise Exception("unauthorized")		
 
 def resolve(uid):

@@ -171,6 +171,23 @@ dispatcher.register("universe", function() {
 
 		mq.subscribe("ship-meta", function(payload) {
 			shipmeta = payload
+			var html = new Array()
+			for(var ship in shipmeta) {
+				var costs = shipmeta[ship].cost
+				
+				if(costs) {
+					html.push(ship)
+					for(var i = 0 ; i < costs.length ; i++) {
+						html.push(" ")
+						html.push(costs[i].item)
+						html.push(":")
+						html.push(costs[i].qty)
+					}
+					html.push("<input type=\"button\" value=\"build\"/>")
+					html.push("<br/>")
+				}
+			}
+			$("#build_menu div").html(html.join(""))	
 		})
 
 		mq.send({ type: "universe", action: "ship-meta" })
