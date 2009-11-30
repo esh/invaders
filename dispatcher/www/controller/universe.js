@@ -30,6 +30,8 @@ dispatcher.register("universe", function() {
 
 	$("#main").load("/view/universe.html", null, function(res, status, req) {
 		var universe = new Array()
+		var shipmeta
+
 		var state = {
 			action: select 
 		} 
@@ -61,6 +63,12 @@ dispatcher.register("universe", function() {
 					html.push(ship.shields)
 					html.push("<br/>")
 					html.push("<input id=\"move\" type=\"button\" value=\"move\"/>")
+
+					if(ship.ship_type == "ark ship") {
+						html.push("<br/>")
+						html.push("<input id=\"build\" type=\"button\" value=\"build\"/>")
+					}
+			
 					$("#ship div").html(html.join(""))
 					$("#move").click(function() {
 						state.selected = ship
@@ -70,7 +78,15 @@ dispatcher.register("universe", function() {
 							state.action = select 
 							$(this).attr("value", "move")	
 						})
-					})	
+					})
+
+					if(ship.ship_type == "ark ship") {
+						$("#build").click(function() {
+							$("#nav").hide()
+							$("#pane").hide()
+							$("#build_menu").show()
+						})
+					}	
 				}
 			}
 			
@@ -84,7 +100,14 @@ dispatcher.register("universe", function() {
 				state.action = select
 			}
 		}
-	
+
+		$("#back").click(function() {
+			$("#nav").show()
+			$("#pane").show()
+			$("#build_menu").hide()
+		})	
+		$("#build_menu").hide()
+
 		$("#market").click(function() {
 			mq.unsubscribe("universe")
 			dispatcher.run("market")
@@ -144,5 +167,12 @@ dispatcher.register("universe", function() {
 		})
 
 		mq.send({ type: "universe", action: "universe" })
+
+
+		mq.subscribe("ship-meta", function(payload) {
+			shipmeta = payload
+		})
+
+		mq.send({ type: "universe", action: "ship-meta" })
 	})
 })

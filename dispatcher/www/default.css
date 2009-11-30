@@ -48,6 +48,12 @@ body {
 	overflow: hidden;
 }
 
+#build_menu {
+	width: 800px;
+	height: 400px;
+	background-color: red;
+}
+
 table {
 	padding:0;
 	margin:0;
