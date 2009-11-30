@@ -56,6 +56,8 @@
 				(keys possessions)
 				(map deref (vals possessions))))))
 
+(defn get-ship-meta [] *ship-meta*)
+	
 (defn update-possessions [user type n]
 	(dosync (let [user (keyword user)
 		      type (keyword type)

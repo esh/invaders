@@ -14,17 +14,24 @@
 
 (defmulti dispatch (fn [chan user msg] (keyword (:action msg))))
 
-(defmethod dispatch :possessions [chan user msg] 
-	(reply chan user {:type "possessions" :payload (universe/get-possessions user)}))
+(defmethod dispatch :possessions [chan user msg] (reply chan user {:type "possessions" :payload (universe/get-possessions user)}))
 
-(defmethod dispatch :universe [chan user msg]
-	(reply chan user {:type "universe" :payload (universe/get-universe)}))
+(defmethod dispatch :ship-meta [chan user msg] (reply chan user {:type "ship-meta" :payload (universe/get-ship-meta)}))
+
+(defmethod dispatch :universe [chan user msg] (reply chan user {:type "universe" :payload (universe/get-universe)}))
 
 (defmethod dispatch :move [chan user msg]
 	(let [res (universe/move-ship user (:from msg) (:to msg))
 	      uni (universe/get-universe)]
 		(if (not (nil? res))
 			(broadcast chan {:type "universe" :payload uni}))))
+
+(defmethod dispatch :create [chan user msg]
+	(let [res (universe/create-ship user (:type msg) (:position msg))
+	      uni (universe/get-universe)]
+		(if (not (nil? res))
+			(broadcast chan {:type "universe" :payload uni}))))
+
 
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")]
 	;game loop
