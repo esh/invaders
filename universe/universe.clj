@@ -75,17 +75,14 @@
 			(insert-rows "possessions" (conj res (. System currentTimeMillis))))))
 	(get-possessions (:owner @ship-ref)))
 
-(defn get-ship [x y]
-	(filter
-		(fn [s]
-			(let [s @s]
-				(and (= (:x s) x) (= (:y s) y))))
-			@*ships-atom*))
+(defn ship-at [x y] (first (filter (fn [s] (let [s @s] (and (= (:x s) x) (= (:y s) y)))) @*ships-atom*)))
+											
+(defn get-ship [id] (first (filter #(= (:id @%) id) @*ships-atom*)))
 
 (defn move-ship [user from to]
-	(let [ship (first (get-ship (nth from 0) (nth from 1)))
-	      target (first (get-ship (nth to 0) (nth to 1)))]
-		(if (and (and (not (nil? ship)) (= user (:owner @ship))) (nil? target))
+	(let [ship (ship-at (nth from 0) (nth from 1))
+	      target (ship-at (nth to 0) (nth to 1))]
+		(if (and (not (nil? ship)) (= user (:owner @ship)) (nil? target))
 			(let [id (:id @ship)
 			      x (nth to 0)
 			      y (nth to 1)]
@@ -94,35 +91,36 @@
 				(with-connection *universe-db*
 					(update-values :ships ["id=?" id] {:x x :y y}))))))
 
-(defn create-ship [user type position]
+(defn find-dock [posx posy]
+	(let [docks (for [x (range (- posx 1) (+ posx 2))
+	     		  y (range (- posy 1) (+ posy 2))
+			  :when (and (not (= x posx)) (not (= y posy)) (>= x 0) (>= y 0))] [x y])]
+		(first (filter #(nil? (apply ship-at %)) docks))))
+
+(defn create-ship [user id type]
 	(let [res (dosync
-			(let [possessions ((keyword user) @*possessions-atom*)
-			      cost (:cost ((keyword type) *ship-meta*))
-			      x (nth position 0)
-			      y (nth position 1)]
-				(if (and
-					(reduce `and (map
-							(fn [r] (>= @((keyword (:item r)) possessions) (:qty r)))
-							cost))
-					(empty? (get-ship x y)))
-					(do
-						(let [updates (map
-							(fn [c] 
-								(let [t [user (:item c) (- (:qty c))]]
-								      (apply update-possessions t)
-									t))
-							cost)
-						      id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
-					 	      ship (ref {:id id :x x :y y :owner user :ship_type type :type "ships" :shields 1.0})]
-							(reset! *ships-atom* (conj @*ships-atom* ship))
-								{:updates updates :ship (vals (dissoc @ship :type))})))))]
+		(let [ark (get-ship id)
+		      dock (find-dock (:x @ark) (:y @ark))
+		      possessions ((keyword user) @*possessions-atom*)
+		      cost (:cost ((keyword type) *ship-meta*))]
+			(if
+				(and
+					(= (:type @ark) "ark ship")
+					(= (:owner @ark) user)
+					(not (nil? dock))
+					(reduce `and (map (fn [r] (>= @((keyword (:item r)) possessions) (:qty r))) cost)))
+				(let [id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
+				      cost (map (fn [c] [user (:item c) (- (:qty c))]) cost)
+				      ship (ref {:id id :x (nth dock 0) :y (nth dock 1) :owner user :ship_type type :type "ships" :shields 1.0})]
+					(doseq [c cost] (apply update-possessions cost))
+					(reset! *ships-atom* (conj @*ships-atom* ship))
+					{:updates cost :ship (vals (dissoc @ship :type))})
+				nil)))]
 		(if (not (nil? res))
-			(do
-				(with-connection *universe-db*
-					(doseq [update (:updates res)]
-						(insert-rows "possessions" (conj update (. System currentTimeMillis))))
-					(insert-rows "ships" (:ship res)))))))
-				
+			(do (with-connection *universe-db*
+				(doseq [update (:updates res)] (insert-rows "possessions" (conj update (. System currentTimeMillis))))
+				(insert-rows "ships" (:ship res)))))))
+			
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
 		(doseq [r results]
