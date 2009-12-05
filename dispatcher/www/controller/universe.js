@@ -82,9 +82,7 @@ dispatcher.register("universe", function() {
 
 					if(ship.ship_type == "ark ship") {
 						$("#build").click(function() {
-							$("#nav").hide()
-							$("#pane").hide()
-							$("#build_menu").show()
+							dispatcher.run("build")
 						})
 					}	
 				}
@@ -100,13 +98,6 @@ dispatcher.register("universe", function() {
 				state.action = select
 			}
 		}
-
-		$("#back").click(function() {
-			$("#nav").show()
-			$("#pane").show()
-			$("#build_menu").hide()
-		})	
-		$("#build_menu").hide()
 
 		$("#market").click(function() {
 			mq.unsubscribe("universe")
@@ -167,29 +158,5 @@ dispatcher.register("universe", function() {
 		})
 
 		mq.send({ type: "universe", action: "universe" })
-
-
-		mq.subscribe("ship-meta", function(payload) {
-			shipmeta = payload
-			var html = new Array()
-			for(var ship in shipmeta) {
-				var costs = shipmeta[ship].cost
-				
-				if(costs) {
-					html.push(ship)
-					for(var i = 0 ; i < costs.length ; i++) {
-						html.push(" ")
-						html.push(costs[i].item)
-						html.push(":")
-						html.push(costs[i].qty)
-					}
-					html.push("<input type=\"button\" value=\"build\"/>")
-					html.push("<br/>")
-				}
-			}
-			$("#build_menu div").html(html.join(""))	
-		})
-
-		mq.send({ type: "universe", action: "ship-meta" })
 	})
 })

@@ -77,8 +77,6 @@
 
 (defn ship-at [x y] (first (filter (fn [s] (let [s @s] (and (= (:x s) x) (= (:y s) y)))) @*ships-atom*)))
 											
-(defn get-ship [id] (first (filter #(= (:id @%) id) @*ships-atom*)))
-
 (defn move-ship [user from to]
 	(let [ship (ship-at (nth from 0) (nth from 1))
 	      target (ship-at (nth to 0) (nth to 1))]
@@ -98,16 +96,14 @@
 		      y (range (- posy 1) (+ posy 2))
 	  	      :when (and (not (and (= x posx) (= y posy))) (>= x 0) (>= y 0))] [x y]))))
 
-(defn create-ship [user id type]
+(defn create-ship [user type]
 	(let [res (dosync
-		(let [ark (get-ship id)
+		(let [ark (first (filter (fn [s] (and (= (:owner @s) user) (= (:ship_type @s) "ark ship"))) @*ships-atom*))
 		      dock (find-dock (:x @ark) (:y @ark))
 		      possessions ((keyword user) @*possessions-atom*)
 		      cost (:cost ((keyword type) *ship-meta*))]
 			(if
 				(and
-					(= (:ship_type @ark) "ark ship")
-					(= (:owner @ark) user)
 					(not (nil? dock))
 					(reduce `and (map (fn [r] (>= @((keyword (:item r)) possessions) (:qty r))) cost)))
 				(let [id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
