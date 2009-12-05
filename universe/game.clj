@@ -19,8 +19,7 @@
 (defmethod dispatch :ship-meta [chan user msg] (reply chan user {:type "ship-meta" :payload (universe/get-ship-meta)}))
 
 (defmethod dispatch :create-ship [chan user msg]
-	(if (not (nil?
-		(universe/create-ship user (:id msg) (:type msg))))
+	(if (not (nil? (universe/create-ship user (:ship_type msg))))
 		(broadcast chan {:type "ship-meta" :payload (universe/get-universe)})))
 
 (defmethod dispatch :universe [chan user msg] (reply chan user {:type "universe" :payload (universe/get-universe)}))
