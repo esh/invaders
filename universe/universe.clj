@@ -84,10 +84,10 @@
 			(let [id (:id @ship)
 			      x (nth to 0)
 			      y (nth to 1)]
+				(with-connection *universe-db* (transaction
 				(dosync
-					(ref-set ship (assoc @ship :x x :y y)))
-				(with-connection *universe-db*
-					(update-values :ships ["id=?" id] {:x x :y y}))))))
+					(ref-set ship (assoc @ship :x x :y y))
+					(update-values :ships ["id=?" id] {:x x :y y}))))))))
 
 (defn find-dock [posx posy]
 	(first (filter
@@ -97,27 +97,24 @@
 	  	      :when (and (not (and (= x posx) (= y posy))) (>= x 0) (>= y 0))] [x y]))))
 
 (defn create-ship [user type]
-	(let [res (dosync
+	(with-connection *universe-db* (transaction (dosync
 		(let [ark (first (filter (fn [s] (and (= (:owner @s) user) (= (:ship_type @s) "ark ship"))) @*ships-atom*))
 		      dock (find-dock (:x @ark) (:y @ark))
 		      possessions ((keyword user) @*possessions-atom*)
-		      cost (:cost ((keyword type) *ship-meta*))]
-			(if
-				(and
-					(not (nil? dock))
-					(reduce `and (map (fn [r] (>= @((keyword (:item r)) possessions) (:qty r))) cost)))
+		      cost (:cost ((keyword type) *ship-meta*))
+		      timestamp (. System currentTimeMillis)]
+			(if (and
+				(not (nil? dock))
+				(reduce `and (map (fn [r] (>= @((keyword (:item r)) possessions) (:qty r))) cost)))
 				(let [id (+ (apply max (map #(:id @%) @*ships-atom*)) 1)
 				      cost (map (fn [c] [user (:item c) (- (:qty c))]) cost)
 				      ship (ref {:id id :x (nth dock 0) :y (nth dock 1) :owner user :ship_type type :type "ships" :shields 1.0})]
-					(doseq [c cost] (apply update-possessions c))
+					(doseq [c cost]
+						(apply update-possessions c)
+						(insert-rows "possessions" (conj c timestamp)))
 					(reset! *ships-atom* (conj @*ships-atom* ship))
-					{:updates cost :ship ship})
-				nil)))]
-		(if (not (nil? res))
-			(do (with-connection *universe-db*
-				(doseq [update (:updates res)] (insert-rows "possessions" (conj update (. System currentTimeMillis))))
-				(insert-rows "ships" (vals (dissoc @(:ship res) :type)))
-				(:ship res))))))
+					(insert-rows "ships" (vals (dissoc @ship :type)))
+					ship)))))))
 			
 (with-connection *universe-db* 
 	(with-query-results results ["select owner, item, sum(qty) as qty, max(timestamp) as timestamp from possessions group by owner, item"]
