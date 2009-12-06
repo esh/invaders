@@ -94,7 +94,7 @@ dispatcher.register("universe", function() {
 	
 		function move(x,y) {
 			if(confirm("move to " + x + " " + y)) {
-				mq.send({ type: "universe", action: "move", from: [state.selected.x, state.selected.y], to: [x, y] })
+				mq.send({ type: "universe", action: "move-ship", from: [state.selected.x, state.selected.y], to: [x, y] })
 				state.action = select
 			}
 		}

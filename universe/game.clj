@@ -18,24 +18,15 @@
 
 (defmethod dispatch :ship-meta [chan user msg] (reply chan user {:type "ship-meta" :payload (universe/get-ship-meta)}))
 
-(defmethod dispatch :create-ship [chan user msg]
-	(if (not (nil? (universe/create-ship user (:ship_type msg))))
-		(broadcast chan {:type "ship-meta" :payload (universe/get-universe)})))
-
 (defmethod dispatch :universe [chan user msg] (reply chan user {:type "universe" :payload (universe/get-universe)}))
 
-(defmethod dispatch :move [chan user msg]
-	(let [res (universe/move-ship user (:from msg) (:to msg))
-	      uni (universe/get-universe)]
-		(if (not (nil? res))
-			(broadcast chan {:type "universe" :payload uni}))))
+(defmethod dispatch :move-ship [chan user msg]
+	(if (not (nil? (universe/move-ship user (:from msg) (:to msg))))
+		(broadcast chan {:type "universe" :payload (universe/get-universe)})))
 
-(defmethod dispatch :create [chan user msg]
-	(let [res (universe/create-ship user (:type msg) (:position msg))
-	      uni (universe/get-universe)]
-		(if (not (nil? res))
-			(broadcast chan {:type "universe" :payload uni}))))
-
+(defmethod dispatch :create-ship [chan user msg]
+	(if (not (nil? (universe/create-ship user (:ship_type msg))))
+		(broadcast chan {:type "universe" :payload (universe/get-universe)})))
 
 (let [conn (amqp/connect "localhost" 5672 "guest" "guest" "/")]
 	;game loop
